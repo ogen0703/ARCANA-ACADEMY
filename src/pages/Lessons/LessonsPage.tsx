@@ -6,6 +6,7 @@ import { P } from "../../game/growth/rules";
 import { MAGIC_KEYS, MAGIC_LABELS } from "../../schemas";
 import { todayLocal } from "../../utils/id";
 import { Bar, Panel } from "../../components/ui";
+import { ART } from "../../game/world/art";
 
 /** 講義棟:6つの講座。1日3コマまで */
 export default function LessonsPage() {
@@ -23,7 +24,8 @@ export default function LessonsPage() {
             const c = COURSES[k], prof = proficiencyOf(ch, k), n = nextUnit(ch, k), done = unitCounts(ch, k).filter((x) => x > 0).length;
             return (
               <li key={k} data-course={k}>
-                <Link to={`/lessons/${k}`} className="block h-full rounded-xl border border-gold-500/30 p-3 transition hover:bg-gold-500/10">
+                <Link to={`/lessons/${k}`} className="relative block h-full overflow-hidden rounded-xl border border-gold-500/30 p-3 pr-20 transition hover:bg-gold-500/10">
+                  <img src={ART.teacher(k)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="pointer-events-none absolute -right-2 top-1 h-[150%] w-auto opacity-90 [mask-image:linear-gradient(to_left,black_60%,transparent)]" />
                   <div className="flex items-baseline justify-between"><p className="font-serif text-lg text-gold-200">{c.name}</p><span className="text-[11px] text-arcane-300">{MAGIC_LABELS[k].name}</span></div>
                   <p className="text-xs text-arcane-300">{c.teacher.name} {c.teacher.title}</p>
                   <div className="mt-2 flex justify-between text-xs"><span>熟練度</span><span className="num text-gold-200">{prof}</span></div>

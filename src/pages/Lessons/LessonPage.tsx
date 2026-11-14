@@ -7,6 +7,13 @@ import { P } from "../../game/growth/rules";
 import { MAGIC_KEYS, type MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
 import { Bar, MagicCircle, Panel } from "../../components/ui";
+import { ART } from "../../game/world/art";
+
+/** 先生の立ち絵(読み込めなければ出さない) */
+function Portrait({ k, className = "" }: { k: string; className?: string }) {
+  const [ok, setOk] = useState(true);
+  return ok ? <img src={ART.teacher(k)} alt="" onError={() => setOk(false)} className={`pointer-events-none select-none object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] ${className}`} /> : null;
+}
 
 type Phase = { step: "pick" } | { step: "lecture"; unit: number } | { step: "question"; unit: number } | { step: "result"; unit: number; correct: boolean; prof: number; exp: number; repeat: boolean; learned: string[] };
 
@@ -24,8 +31,13 @@ export default function LessonPage() {
   return (
     <div className="mx-auto grid max-w-2xl gap-4">
       <Panel title={c.name} right={<Link to="/lessons" className="shrink-0 text-xs text-candle">講義棟へ</Link>}>
-        <p className="text-sm text-gold-200">{c.teacher.name} {c.teacher.title}</p>
-        <p className="text-xs text-arcane-300">{c.teacher.persona}</p>
+        <div className="flex gap-3">
+          <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_30%,rgba(244,214,140,0.25),rgba(42,46,110,0.4)_70%)]"><Portrait k={k} className="h-[260%] w-full object-cover object-top" /></div>
+          <div className="min-w-0">
+            <p className="text-sm text-gold-200">{c.teacher.name} {c.teacher.title}</p>
+            <p className="text-xs text-arcane-300">{c.teacher.persona}</p>
+          </div>
+        </div>
         <div className="mt-2 flex items-center gap-3 text-xs"><span>熟練度</span><div className="flex-1"><Bar value={proficiencyOf(ch, k)} /></div><span className="num text-gold-200">{proficiencyOf(ch, k)}</span><span className="num text-arcane-300">今日あと {left} コマ</span></div>
       </Panel>
 
@@ -52,8 +64,13 @@ export default function LessonPage() {
 
       {ph.step === "lecture" && (
         <Panel title={`単元${ph.unit + 1} ・ ${units[ph.unit].title}`}>
-          <p className="font-serif text-lg leading-relaxed text-[#ece6fb]" data-testid="lecture">「{units[ph.unit].lecture}」</p>
-          <p className="mt-2 text-right text-xs text-arcane-300">— {c.teacher.name}</p>
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-serif text-lg leading-relaxed text-[#ece6fb]" data-testid="lecture">「{units[ph.unit].lecture}」</p>
+              <p className="mt-2 text-right text-xs text-arcane-300">— {c.teacher.name}</p>
+            </div>
+            <Portrait k={k} className="h-56 w-auto shrink-0 sm:h-72" />
+          </div>
           <button className="btn btn-primary mt-4" onClick={() => setPh({ step: "question", unit: ph.unit })}>確認の問いへ</button>
         </Panel>
       )}

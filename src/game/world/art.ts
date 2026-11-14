@@ -8,6 +8,8 @@ export const ART = {
   hall: { dawn: `${base}art/hall-dawn.webp`, day: `${base}art/hall-day.webp`, dusk: `${base}art/hall-dusk.webp`, night: `${base}art/hall-night.webp` } as Record<TimeKey, string>,
   hero: `${base}art/hero.webp`,
   areas: { academy: `${base}art/area-academy.webp`, library: `${base}art/area-library.webp` } as Record<string, string>,
+  /** 先生の立ち絵(透過) */
+  teacher: (k: string) => `${base}art/teacher-${k}.webp`,
 };
 /** 広間の画像の縦横比(1536×1024) */
 export const HALL_ASPECT = 1.5;
