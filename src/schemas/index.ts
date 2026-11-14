@@ -111,6 +111,8 @@ export const ExperienceEventSchema = z.object({
   approvedGrowth: GrowthSchema.nullable(),
   createdAt: iso,
   appliedAt: iso.nullable(),
+  /** 取り込み元の目印(同じ記録を2回取り込まないため)。手入力は無し */
+  sourceRef: z.string().max(200).optional(),
 });
 export type ExperienceEvent = z.infer<typeof ExperienceEventSchema>;
 
@@ -137,3 +139,22 @@ export const ExportSchema = z.object({
   statHistory: z.array(StatHistorySchema),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
+
+/* ---------- 経験の取り込み(GDD 7章 入力方法) ---------- */
+export const ImportItemSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  category: z.enum(CATEGORY_KEYS),
+  title: z.string().min(1).max(80),
+  description: z.string().max(2000).default(""),
+  difficulty: z.number().int().min(1).max(5).default(2),
+  duration: z.number().int().min(0).max(24 * 60).default(0),
+  reflection: z.string().max(2000).default(""),
+  sourceRef: z.string().max(200).optional(),
+});
+export type ImportItem = z.infer<typeof ImportItemSchema>;
+export const ImportFileSchema = z.object({
+  app: z.literal("arcana-academy-experiences"),
+  source: z.enum(["markdown", "csv", "diary", "ai"]).default("markdown"),
+  note: z.string().optional(),
+  items: z.array(ImportItemSchema).max(500),
+});

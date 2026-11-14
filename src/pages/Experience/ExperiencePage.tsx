@@ -7,6 +7,7 @@ import { CATEGORY_DEFS, DIFFICULTY_LABELS } from "../../game/growth/rules";
 import { CATEGORY_KEYS, STAT_LABELS, type CategoryKey, type ExperienceEvent, type StatKey } from "../../schemas";
 import { Panel, statusPill } from "../../components/ui";
 import { todayLocal } from "../../utils/id";
+import ImportPanel from "./ImportPanel";
 
 const blank = (): NewExperience => ({ date: todayLocal(), category: "sports", title: "", description: "", difficulty: 3, duration: 60, reflection: "" });
 
@@ -62,10 +63,14 @@ export default function ExperiencePage() {
   const [msg, setMsg] = useState("");
   const [filter, setFilter] = useState<"all" | "proposed" | "applied">("all");
   const set = <K extends keyof NewExperience>(k: K, v: NewExperience[K]) => setF((p) => ({ ...p, [k]: v }));
+  const [bulk, setBulk] = useState(false);
+  // 古い順に反映する(繰り返しの判定と年表の順番を自然にするため)
+  const waiting = experiences.filter((e) => e.analysisStatus === "proposed").sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
   const shown = experiences.filter((e) => filter === "all" || e.analysisStatus === filter);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+      <div className="grid content-start gap-4">
       <Panel title="経験を登録する">
         <form className="grid gap-3" onSubmit={async (e) => {
           e.preventDefault();
@@ -98,6 +103,8 @@ export default function ExperiencePage() {
           <p className="text-[11px] text-arcane-300/60">分析:{analyzer.name}(データは外に送りません)。成長の量はルールで決まり、承認するまで反映されません。</p>
         </form>
       </Panel>
+      <ImportPanel />
+      </div>
 
       <Panel title="登録した経験" right={
         <div className="flex gap-1 text-xs">
@@ -106,6 +113,16 @@ export default function ExperiencePage() {
           ))}
         </div>
       }>
+        {waiting.length > 1 && (
+          <div className="mb-3 rounded-xl bg-candle/10 px-3 py-2 text-sm">
+            {bulk ? (
+              <span>承認まちの{waiting.length}件を、見込みどおりに全部反映する? <button className="btn btn-primary ml-1 px-3 py-1 text-xs" onClick={async () => {
+                let ok = 0; for (const e of waiting) { try { await approveExperience(e.id); ok++; } catch { /* 反映済みなどは飛ばす */ } }
+                await run(async () => undefined); setBulk(false); setMsg(`${ok}件を反映した`);
+              }}>反映する</button> <button className="btn ml-1 px-3 py-1 text-xs" onClick={() => setBulk(false)}>やめる</button></span>
+            ) : <button className="text-candle underline-offset-2 hover:underline" onClick={() => setBulk(true)}>承認まちの{waiting.length}件をまとめて反映する…</button>}
+          </div>
+        )}
         {shown.length === 0 ? <p className="text-sm text-arcane-300">まだありません。左のフォームから、今日の経験を1つ登録してみよう。</p>
           : <ul className="grid gap-3">{shown.map((e) => <ProposalCard key={e.id} ev={e} />)}</ul>}
       </Panel>

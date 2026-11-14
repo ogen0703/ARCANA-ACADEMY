@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Character, ExperienceEvent, PlayerProfile, StatHistory } from "../../schemas";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export class ArcanaDB extends Dexie {
   player!: Table<PlayerProfile, string>;
@@ -18,6 +18,10 @@ export class ArcanaDB extends Dexie {
       experiences: "id, date, category, analysisStatus, createdAt",
       statHistory: "id, at, eventId, kind, key",
       meta: "key",
+    });
+    // v2:経験に sourceRef(取り込み元の目印)を追加。既存データはそのまま(値なし)
+    this.version(2).stores({ experiences: "id, date, category, analysisStatus, createdAt, sourceRef" }).upgrade(async (tx) => {
+      await tx.table("meta").put({ key: "schemaVersion", value: 2 });
     });
   }
 }

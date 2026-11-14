@@ -33,3 +33,27 @@ describe("保存とルールの通り道", () => {
     await expect(importAll({ app: "other" })).rejects.toThrow();
   });
 });
+
+import { importExperiences, parseMarkdownExperiences, listExperiences } from "./repo";
+describe("経験の取り込み", () => {
+  it("Markdownを読み、2回目は重複としてスキップする", async () => {
+    const items = parseMarkdownExperiences("# メモ\n- 2026-11-11 [音楽・歌] noirのカラオケ配信 | 2回配信 | 楽しかった\n- 2026-11-13 [仕事] クレジット研修\nただの文\n");
+    expect(items).toHaveLength(2);
+    expect(items[0].category).toBe("music");
+    expect(items[0].reflection).toBe("楽しかった");
+    expect(await importExperiences(items, "markdown")).toEqual({ added: 2, skipped: 0 });
+    expect(await importExperiences(items, "markdown")).toEqual({ added: 0, skipped: 2 });
+    const list = await listExperiences();
+    expect(list.every((e) => e.analysisStatus === "proposed")).toBe(true);
+  });
+});
+
+describe("まとめて反映", () => {
+  it("同じ経験を続けて反映すると、2回目は伸びが小さい", async () => {
+    const a = await addExperience({ ...input, title: "サッカー練習", category: "sports", date: "2026-11-10" });
+    const b = await addExperience({ ...input, title: "サッカー練習", category: "sports", date: "2026-11-12" });
+    const r1 = await approveExperience(a.id); const r2 = await approveExperience(b.id);
+    const exp = (r: typeof r1) => r.history.find((h) => h.kind === "exp")!;
+    expect(exp(r2).after - exp(r2).before).toBeLessThan(exp(r1).after - exp(r1).before);
+  });
+});

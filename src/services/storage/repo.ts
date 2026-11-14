@@ -1,4 +1,5 @@
-import { CharacterSchema, ExperienceEventSchema, ExportSchema, PlayerProfileSchema, type Character, type ExperienceEvent, type ExportData, type Growth } from "../../schemas";
+import { CATEGORY_KEYS, CharacterSchema, ExperienceEventSchema, ExportSchema, ImportItemSchema, PlayerProfileSchema, type Character, type ExperienceEvent, type ExportData, type Growth, type ImportItem } from "../../schemas";
+import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { createCharacter, createPlayer } from "../../game/character/create";
 import { applyGrowth } from "../../game/growth/engine";
 import { analyzer } from "../ai";
@@ -25,7 +26,7 @@ export async function renameCharacter(name: string) {
   await db.characters.put(CharacterSchema.parse({ ...ch, name: name.trim(), updatedAt: nowIso() }));
 }
 
-export type NewExperience = Pick<ExperienceEvent, "date" | "category" | "title" | "description" | "difficulty" | "duration" | "reflection"> & { source?: ExperienceEvent["source"] };
+export type NewExperience = Pick<ExperienceEvent, "date" | "category" | "title" | "description" | "difficulty" | "duration" | "reflection"> & { source?: ExperienceEvent["source"]; sourceRef?: string };
 
 /** 経験を登録し、すぐに成長の提案(proposedGrowth)を作る */
 export async function addExperience(input: NewExperience): Promise<ExperienceEvent> {
@@ -35,6 +36,35 @@ export async function addExperience(input: NewExperience): Promise<ExperienceEve
   });
   await db.experiences.put(ev);
   return analyze(ev.id);
+}
+
+/** 取り込み:同じ sourceRef(または同じ日付+タイトル)の経験はスキップ。全部「承認まち」で入る */
+export async function importExperiences(items: ImportItem[], source: ExperienceEvent["source"]) {
+  const existing = await db.experiences.toArray();
+  const refs = new Set(existing.map((e) => e.sourceRef).filter(Boolean));
+  const keys = new Set(existing.map((e) => e.date + "|" + e.title.trim()));
+  let added = 0, skipped = 0;
+  for (const it of items) {
+    if ((it.sourceRef && refs.has(it.sourceRef)) || keys.has(it.date + "|" + it.title.trim())) { skipped++; continue; }
+    await addExperience({ ...it, source });
+    if (it.sourceRef) refs.add(it.sourceRef); keys.add(it.date + "|" + it.title.trim()); added++;
+  }
+  return { added, skipped };
+}
+
+/** かんたんなMarkdown:「- 2026-11-14 [スポーツ] タイトル | くわしく | 振り返り」の行を読む */
+export function parseMarkdownExperiences(md: string): ImportItem[] {
+  const byLabel = new Map(Object.entries(CATEGORY_DEFS).map(([k, v]) => [v.label, k]));
+  const out: ImportItem[] = [];
+  for (const line of md.split(/\r?\n/)) {
+    const m = line.match(/^\s*[-*]\s*(\d{4}-\d{2}-\d{2})\s*(?:[\[【]([^\]】]+)[\]】])?\s*(.+)$/);
+    if (!m) continue;
+    const [title, description = "", reflection = ""] = m[3].split("|").map((x) => x.trim());
+    const cat = (m[2] && (byLabel.get(m[2].trim()) ?? (CATEGORY_KEYS as readonly string[]).find((k) => k === m[2].trim()))) || "other";
+    const r = ImportItemSchema.safeParse({ date: m[1], category: cat, title: title.slice(0, 80), description, reflection, sourceRef: "md:" + m[1] + ":" + title.slice(0, 60) });
+    if (r.success) out.push(r.data);
+  }
+  return out;
 }
 
 export async function analyze(id: string): Promise<ExperienceEvent> {
@@ -57,6 +87,8 @@ export async function updateExperience(id: string, patch: Partial<NewExperience>
 
 /** プレイヤーの承認 → ルールエンジンで確定 → 1回だけ反映 */
 export async function approveExperience(id: string, growth?: Growth) {
+  // 反映の直前に、今までに反映した経験を踏まえて見込みを作り直す(まとめて反映しても繰り返しの抑制が効くように)
+  if (!growth) { const cur = await db.experiences.get(id); if (cur && cur.analysisStatus === "proposed") await analyze(id); }
   return db.transaction("rw", db.characters, db.experiences, db.statHistory, async () => {
     const ev = ExperienceEventSchema.parse(await db.experiences.get(id));
     const ch = await getCharacter();
