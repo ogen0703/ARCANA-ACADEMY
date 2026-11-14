@@ -1,0 +1,20 @@
+import { MAGIC_KEYS, PERSONALITY_KEYS, STAT_KEYS, type Character, type PlayerProfile } from "../../schemas";
+import { P } from "../growth/rules";
+
+/** GDD 4章:初期プロフィール。プレイヤー本人の情報(PlayerProfile)とキャラクターは分けて持つ */
+export function createPlayer(now: string): PlayerProfile {
+  return { id: "player", displayName: "げんた", gender: "男性", birthday: "1997-07-03", photoConsent: false, aiSendConsent: false, updatedAt: now };
+}
+
+export function createCharacter(name: string, now: string): Character {
+  return {
+    id: "hero", name, createdAt: now, updatedAt: now, level: 1, experience: 0,
+    appearance: { hairColor: "夜の黒", eyeColor: "深い藍", robe: "見習いのローブ(紺)", aura: "まだ見えない" },
+    basicStats: Object.fromEntries(STAT_KEYS.map((k) => [k, P.initialStat])) as Character["basicStats"],
+    personality: Object.fromEntries(PERSONALITY_KEYS.map((k) => [k, { value: null, evidence: 0 }])) as Character["personality"],
+    magicAffinity: Object.fromEntries(MAGIC_KEYS.map((k) => [k, { value: null, signals: 0 }])) as Character["magicAffinity"],
+    learnedSpells: [], inventory: [], titles: [], achievements: [], relationships: [],
+    history: { origin: "未解明", house: null, wand: null, wizardAge: null },
+    appliedEventIds: [],
+  };
+}

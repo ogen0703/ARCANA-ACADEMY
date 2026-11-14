@@ -1,0 +1,45 @@
+/**
+ * 成長ルールのパラメータ。
+ * GDDに数値の決まりがない項目は「仮」の値。変えるときは docs/GDD.md の「ルールの仮パラメータ」と CHANGELOG を更新する。
+ */
+import type { CategoryKey, MagicKey, PersonalityKey, StatKey } from "../../schemas";
+
+export const RULES_VERSION = "rules-v1";
+
+export const CATEGORY_DEFS: Record<CategoryKey, {
+  label: string; example: string;
+  stats: Partial<Record<StatKey, number>>; // 合計 1.0 の配分
+  personality: Partial<Record<PersonalityKey, number>>;
+  magic: Partial<Record<MagicKey, number>>;
+}> = {
+  // GDD 7章の変換例に沿う
+  sports: { label: "スポーツ・運動", example: "サッカーの試合・練習", stats: { physical: 0.5, spirit: 0.25, willpower: 0.25 }, personality: { competitiveness: 1, patience: 0.5 }, magic: { elemental: 1 } },
+  creative: { label: "創作", example: "画像制作・動画編集・文章", stats: { creativity: 0.5, intellect: 0.25, sensitivity: 0.25 }, personality: { curiosity: 0.5 }, magic: { creation: 1 } },
+  learning: { label: "学び", example: "新しい知識の習得・勉強", stats: { intellect: 0.7, spirit: 0.3 }, personality: { inquisitiveness: 1 }, magic: { astral: 0.5, ancient: 0.5 } },
+  relationship: { label: "人とのつながり", example: "人間関係の構築・オフ会", stats: { bond: 0.6, sensitivity: 0.4 }, personality: { empathy: 1 }, magic: { mind: 1 } },
+  challenge: { label: "新しい挑戦", example: "初めてのことに挑む", stats: { willpower: 0.6, spirit: 0.4 }, personality: { adventurousness: 1, decisiveness: 0.5 }, magic: { astral: 1 } },
+  work: { label: "仕事", example: "商談・提案・プロジェクト", stats: { intellect: 0.35, bond: 0.35, spirit: 0.3 }, personality: { responsibility: 1 }, magic: { mind: 0.5, astral: 0.5 } },
+  music: { label: "音楽・歌", example: "カラオケ配信・歌の練習", stats: { sensitivity: 0.4, creativity: 0.4, spirit: 0.2 }, personality: { curiosity: 0.5 }, magic: { mind: 0.5, creation: 0.5 } },
+  reflection: { label: "振り返り・内省", example: "日記・自己分析", stats: { spirit: 0.5, intellect: 0.25, sensitivity: 0.25 }, personality: { prudence: 1 }, magic: { mind: 1 } },
+  other: { label: "その他", example: "どれにも当てはまらない経験", stats: { willpower: 0.5, spirit: 0.5 }, personality: {}, magic: {} },
+};
+
+export const DIFFICULTY_LABELS = ["", "かんたん", "ふつう", "がんばった", "かなり大変", "限界突破"] as const;
+
+export const P = {
+  initialStat: 10, // 仮:初期ステータス(初期診断はPhase 3)
+  basePoints: [0, 1, 2, 3, 5, 8], // 難易度ごとの基本ポイント
+  durationFullMinutes: 120, // この時間で継続ボーナス最大
+  durationMaxBonus: 0.5, // 最大+50%
+  reflectionMinChars: 30, // これ以上の振り返りで+20%
+  reflectionBonus: 0.2,
+  repeatWindowDays: 7, // 同じ経験の繰り返し判定の期間
+  repeatDecay: 0.5, // 1回繰り返すごとに 1/(1+0.5n)
+  expPerPoint: 10,
+  perEventStatCap: 3, // 1回の経験で1能力が上がる上限
+  imbalanceMargin: 30, // 平均+30を超えた能力は伸びが半分
+  statMax: 100,
+};
+
+/** 次のレベルまでに必要な経験値(レベルLからL+1) */
+export const expToNext = (level: number) => 100 + 50 * (level - 1);

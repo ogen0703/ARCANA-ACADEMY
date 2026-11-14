@@ -1,0 +1,139 @@
+import { z } from "zod";
+
+/* ---------- 定数(GDD 5章・6章) ---------- */
+export const STAT_KEYS = ["intellect", "spirit", "sensitivity", "creativity", "willpower", "bond", "physical"] as const;
+export type StatKey = (typeof STAT_KEYS)[number];
+export const STAT_LABELS: Record<StatKey, { name: string; desc: string }> = {
+  intellect: { name: "知性", desc: "知識、分析、学習能力" },
+  spirit: { name: "精神", desc: "忍耐、冷静さ、精神耐性" },
+  sensitivity: { name: "感受性", desc: "感情理解、共感、芸術性" },
+  creativity: { name: "創造性", desc: "発想、表現、創作能力" },
+  willpower: { name: "意志力", desc: "決断、挑戦、継続力" },
+  bond: { name: "絆", desc: "信頼、協力、人間関係" },
+  physical: { name: "身体能力", desc: "体力、運動、反応能力" },
+};
+
+export const PERSONALITY_KEYS = ["curiosity", "inquisitiveness", "independence", "empathy", "competitiveness", "adventurousness", "prudence", "patience", "decisiveness", "responsibility"] as const;
+export type PersonalityKey = (typeof PERSONALITY_KEYS)[number];
+export const PERSONALITY_LABELS: Record<PersonalityKey, string> = {
+  curiosity: "好奇心", inquisitiveness: "探究心", independence: "独立心", empathy: "共感性", competitiveness: "負けず嫌い",
+  adventurousness: "冒険心", prudence: "慎重さ", patience: "忍耐力", decisiveness: "決断力", responsibility: "責任感",
+};
+
+export const MAGIC_KEYS = ["astral", "mind", "creation", "nature", "elemental", "ancient"] as const;
+export type MagicKey = (typeof MAGIC_KEYS)[number];
+export const MAGIC_LABELS: Record<MagicKey, { name: string; desc: string }> = {
+  astral: { name: "星辰魔法", desc: "星、空間、天体、運命" },
+  mind: { name: "精神魔法", desc: "精神、記憶、感情、認識" },
+  creation: { name: "創造魔法", desc: "具現化、錬成、構築、創作" },
+  nature: { name: "自然魔法", desc: "植物、生命、動物、自然" },
+  elemental: { name: "元素魔法", desc: "炎、水、風、土、雷" },
+  ancient: { name: "古代魔法", desc: "未知の法則、特殊能力、禁術" },
+};
+
+/* ---------- 共通 ---------- */
+const iso = z.string().min(1);
+const stat0to100 = z.number().min(0).max(100);
+export const StatsSchema = z.object(Object.fromEntries(STAT_KEYS.map((k) => [k, stat0to100])) as Record<StatKey, typeof stat0to100>);
+export type Stats = z.infer<typeof StatsSchema>;
+
+/** 性格:値は長期の行動から形成(Phase 3)。それまでは未形成(null) */
+const personalityValue = z.object({ value: z.number().min(0).max(100).nullable(), evidence: z.number().int().min(0) });
+export const PersonalitySchema = z.object(Object.fromEntries(PERSONALITY_KEYS.map((k) => [k, personalityValue])) as Record<PersonalityKey, typeof personalityValue>);
+
+/** 魔法適性:初期診断で判定(Phase 3)。それまでは未診断(null) */
+const affinityValue = z.object({ value: z.number().min(0).max(100).nullable(), signals: z.number().min(0) });
+export const MagicAffinitySchema = z.object(Object.fromEntries(MAGIC_KEYS.map((k) => [k, affinityValue])) as Record<MagicKey, typeof affinityValue>);
+
+/* ---------- プレイヤー(現実の情報。ゲーム内キャラクターとは分離) ---------- */
+export const PlayerProfileSchema = z.object({
+  id: z.literal("player"),
+  displayName: z.string().min(1),
+  gender: z.string().optional(),
+  birthday: z.string().optional(),
+  photoConsent: z.boolean(),
+  aiSendConsent: z.boolean(),
+  updatedAt: iso,
+});
+export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
+
+/* ---------- キャラクター ---------- */
+export const CharacterSchema = z.object({
+  id: z.literal("hero"),
+  name: z.string().min(1).max(30),
+  createdAt: iso,
+  updatedAt: iso,
+  level: z.number().int().min(1),
+  experience: z.number().int().min(0),
+  appearance: z.object({ hairColor: z.string(), eyeColor: z.string(), robe: z.string(), aura: z.string() }),
+  basicStats: StatsSchema,
+  personality: PersonalitySchema,
+  magicAffinity: MagicAffinitySchema,
+  learnedSpells: z.array(z.string()),
+  inventory: z.array(z.object({ id: z.string(), name: z.string(), qty: z.number().int() })),
+  titles: z.array(z.object({ id: z.string(), name: z.string(), at: iso })),
+  achievements: z.array(z.object({ id: z.string(), name: z.string(), at: iso })),
+  relationships: z.array(z.object({ id: z.string(), name: z.string(), bond: z.number() })),
+  /** 生い立ち・物語上の設定(出身:未解明 など) */
+  history: z.object({ origin: z.string(), house: z.string().nullable(), wand: z.string().nullable(), wizardAge: z.string().nullable() }),
+  appliedEventIds: z.array(z.string()),
+});
+export type Character = z.infer<typeof CharacterSchema>;
+
+/* ---------- 経験イベント(GDD 7章・指示書 6章) ---------- */
+export const CATEGORY_KEYS = ["sports", "creative", "learning", "relationship", "challenge", "work", "music", "reflection", "other"] as const;
+export type CategoryKey = (typeof CATEGORY_KEYS)[number];
+
+export const GrowthSchema = z.object({
+  exp: z.number().int().min(0),
+  stats: z.record(z.enum(STAT_KEYS), z.number()),
+  personalitySignals: z.record(z.enum(PERSONALITY_KEYS), z.number()),
+  magicSignals: z.record(z.enum(MAGIC_KEYS), z.number()),
+  notes: z.array(z.string()),
+  engine: z.string(),
+});
+export type Growth = z.infer<typeof GrowthSchema>;
+
+export const ANALYSIS_STATUS = ["pending", "proposed", "applied", "rejected"] as const;
+export const ExperienceEventSchema = z.object({
+  id: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  source: z.enum(["manual", "diary", "markdown", "csv", "ai"]),
+  category: z.enum(CATEGORY_KEYS),
+  title: z.string().min(1).max(80),
+  description: z.string().max(2000),
+  difficulty: z.number().int().min(1).max(5),
+  /** 分 */
+  duration: z.number().int().min(0).max(24 * 60),
+  reflection: z.string().max(2000),
+  analysisStatus: z.enum(ANALYSIS_STATUS),
+  proposedGrowth: GrowthSchema.nullable(),
+  approvedGrowth: GrowthSchema.nullable(),
+  createdAt: iso,
+  appliedAt: iso.nullable(),
+});
+export type ExperienceEvent = z.infer<typeof ExperienceEventSchema>;
+
+/* ---------- 成長履歴 ---------- */
+export const StatHistorySchema = z.object({
+  id: z.string(),
+  at: iso,
+  eventId: z.string(),
+  kind: z.enum(["stat", "exp", "level"]),
+  key: z.string(),
+  before: z.number(),
+  after: z.number(),
+});
+export type StatHistory = z.infer<typeof StatHistorySchema>;
+
+/* ---------- エクスポート ---------- */
+export const ExportSchema = z.object({
+  app: z.literal("arcana-academy"),
+  schemaVersion: z.number().int(),
+  exportedAt: iso,
+  player: PlayerProfileSchema.nullable(),
+  character: CharacterSchema.nullable(),
+  experiences: z.array(ExperienceEventSchema),
+  statHistory: z.array(StatHistorySchema),
+});
+export type ExportData = z.infer<typeof ExportSchema>;
