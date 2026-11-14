@@ -4,6 +4,7 @@
  */
 import { STAT_KEYS, type Character, type ExperienceEvent, type Growth, type StatHistory, type StatKey } from "../../schemas";
 import { CATEGORY_DEFS, P, RULES_VERSION, expToNext } from "./rules";
+import { affinityValue, personalityValue } from "./formation";
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const dayDiff = (a: string, b: string) => Math.abs((Date.parse(a) - Date.parse(b)) / 86400000);
@@ -37,12 +38,19 @@ export function proposeGrowth(ev: ExperienceEvent, past: ExperienceEvent[]): Gro
     pts.refl > 1 ? `振り返りあり:×${pts.refl}` : "振り返りを書くと伸びが+20%",
     repeats ? `直近${P.repeatWindowDays}日で同じ経験${repeats}回:×${pts.rep.toFixed(2)}` : "",
   ].filter(Boolean);
-  const scale = (o: Partial<Record<string, number>>) => Object.fromEntries(Object.entries(o).map(([k, w]) => [k, round1((w ?? 0) * pts.total / 2)]));
+  // 性格・魔法の兆し:種類ごとのルール + AIの読み取り(あれば)。能力値には AI を使わない
+  const add = (rule: Partial<Record<string, number>>, ai?: Partial<Record<string, number>>) => {
+    const m: Record<string, number> = {};
+    for (const [k, w] of Object.entries(rule)) m[k] = (m[k] ?? 0) + (w ?? 0);
+    for (const [k, w] of Object.entries(ai ?? {})) m[k] = (m[k] ?? 0) + (w ?? 0) * P.aiSignalWeight;
+    return Object.fromEntries(Object.entries(m).filter(([, w]) => w > 0).map(([k, w]) => [k, round1(w * pts.total / 2)]));
+  };
+  if (ev.ai) notes.push(`AIの読み取り(${ev.ai.by})を性格・魔法の兆しに反映`);
   return {
     exp: Math.round(pts.total * P.expPerPoint),
     stats, // 確定値は適用時に finalizeStats で決める(画面では予想として表示)
-    personalitySignals: scale(def.personality),
-    magicSignals: scale(def.magic),
+    personalitySignals: add(def.personality, ev.ai?.personality),
+    magicSignals: add(def.magic, ev.ai?.magic),
     notes,
     engine: RULES_VERSION,
   };
@@ -73,11 +81,21 @@ export function applyGrowth(ch: Character, ev: ExperienceEvent, growth: Growth, 
     history.push({ id: newId(), at: now, eventId: ev.id, kind: "stat", key: k, before: stats[k], after });
     stats[k] = after;
   }
-  // 性格・魔法適性はPhase 3で形成。今は根拠(signals)だけ数える
+  // 性格:根拠の数と兆しの強さをためて、十分たまったら値が形になる(1回では決めない)
+  type PK = keyof Character["personality"]; type MK = keyof Character["magicAffinity"];
   const personality = { ...ch.personality };
-  for (const [k, v] of Object.entries(growth.personalitySignals)) if (v && personality[k as keyof typeof personality]) personality[k as keyof typeof personality] = { ...personality[k as keyof typeof personality], evidence: personality[k as keyof typeof personality].evidence + 1 };
+  for (const [k, v] of Object.entries(growth.personalitySignals) as [PK, number][]) {
+    const cur = personality[k]; if (!(v > 0) || !cur) continue;
+    const evidence = cur.evidence + 1, weight = round1(cur.weight + v);
+    personality[k] = { evidence, weight, value: personalityValue(evidence, weight) };
+  }
+  // 魔法適性:兆しをため、入学診断の基礎値があれば値を出す
   const magicAffinity = { ...ch.magicAffinity };
-  for (const [k, v] of Object.entries(growth.magicSignals)) if (v && magicAffinity[k as keyof typeof magicAffinity]) magicAffinity[k as keyof typeof magicAffinity] = { ...magicAffinity[k as keyof typeof magicAffinity], signals: round1(magicAffinity[k as keyof typeof magicAffinity].signals + v) };
+  for (const [k, v] of Object.entries(growth.magicSignals) as [MK, number][]) {
+    const cur = magicAffinity[k]; if (!(v > 0) || !cur) continue;
+    const signals = round1(cur.signals + v);
+    magicAffinity[k] = { ...cur, signals, value: affinityValue(cur.base, signals) };
+  }
   // 経験値とレベル
   const expBefore = ch.experience, levelBefore = ch.level;
   let exp = ch.experience + Math.max(0, Math.round(growth.exp)), level = ch.level;

@@ -2,6 +2,9 @@ import { CATEGORY_KEYS, CharacterSchema, ExperienceEventSchema, ExportSchema, Im
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { createCharacter, createPlayer } from "../../game/character/create";
 import { applyGrowth } from "../../game/growth/engine";
+import { applyDiagnosis, diagnose } from "../../game/growth/formation";
+import { migrateCharacterV3 } from "./migrations";
+import type { AiInsight } from "../../schemas";
 import { analyzer } from "../ai";
 import { newId, nowIso } from "../../utils/id";
 import { db, SCHEMA_VERSION } from "./db";
@@ -22,12 +25,16 @@ export const listExperiences = () => db.experiences.orderBy("createdAt").reverse
 export const getExperience = (id: string) => db.experiences.get(id);
 export const listHistory = () => db.statHistory.orderBy("at").reverse().toArray();
 
+/** 小さな設定・メモ(成長レポートの講評など) */
+export const getMeta = async <T,>(key: string) => (await db.meta.get(key))?.value as T | undefined;
+export const setMeta = (key: string, value: unknown) => db.meta.put({ key, value });
+
 export async function renameCharacter(name: string) {
   const ch = await getCharacter();
   await db.characters.put(CharacterSchema.parse({ ...ch, name: name.trim(), updatedAt: nowIso() }));
 }
 
-export type NewExperience = Pick<ExperienceEvent, "date" | "category" | "title" | "description" | "difficulty" | "duration" | "reflection"> & { source?: ExperienceEvent["source"]; sourceRef?: string };
+export type NewExperience = Pick<ExperienceEvent, "date" | "category" | "title" | "description" | "difficulty" | "duration" | "reflection"> & { source?: ExperienceEvent["source"]; sourceRef?: string; ai?: AiInsight };
 
 /** 経験を登録し、すぐに成長の提案(proposedGrowth)を作る */
 export async function addExperience(input: NewExperience): Promise<ExperienceEvent> {
@@ -86,6 +93,17 @@ export async function updateExperience(id: string, patch: Partial<NewExperience>
   return analyze(id);
 }
 
+/** AIの読み取りを経験に付ける(未反映のものだけ)。成長の見込みを作り直す */
+export const setExperienceAi = (id: string, ai: AiInsight | undefined) => updateExperience(id, { ai });
+
+/** 入学診断:回答から魔法適性の基礎値を決める(1回だけ) */
+export async function diagnoseHero(answers: number[]) {
+  const ch = await getCharacter();
+  const next = applyDiagnosis(ch, diagnose(answers), nowIso());
+  await db.characters.put(CharacterSchema.parse(next));
+  return next;
+}
+
 /** プレイヤーの承認 → ルールエンジンで確定 → 1回だけ反映 */
 export async function approveExperience(id: string, growth?: Growth) {
   // 反映の直前に、今までに反映した経験を踏まえて見込みを作り直す(まとめて反映しても繰り返しの抑制が効くように)
@@ -135,7 +153,8 @@ export async function importAll(raw: unknown) {
   await db.transaction("rw", db.player, db.characters, db.experiences, db.statHistory, async () => {
     await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear()]);
     if (data.player) await db.player.put(data.player);
-    if (data.character) await db.characters.put(data.character);
+    // 古い形のデータは今の形に直してから入れる
+    if (data.character) await db.characters.put(data.schemaVersion < 3 ? migrateCharacterV3(data.character, data.experiences) : data.character);
     await db.experiences.bulkPut(data.experiences);
     await db.statHistory.bulkPut(data.statHistory);
   });

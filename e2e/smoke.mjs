@@ -41,6 +41,7 @@ try {
   await p.screenshot({ path: `${out}/magic.png`, fullPage: true });
   await p.getByRole("link", { name: "設定" }).first().click(); await p.getByText("自動受け取り").first().waitFor();
   await p.locator("nav").last().getByText("図鑑").click();
+  await p.getByTestId("report").waitFor(); await p.getByRole("tab", { name: "成長年表" }).click();
   await p.getByText("経験 1件").waitFor();
   for (const t of ["魔法図鑑", "魔法生物図鑑", "探索記録", "成長年表"]) { await p.getByRole("tab", { name: t }).click(); await p.waitForTimeout(80); }
   await p.screenshot({ path: `${out}/encyclopedia.png`, fullPage: true });

@@ -57,3 +57,29 @@ describe("まとめて反映", () => {
     expect(exp(r2).after - exp(r2).before).toBeLessThan(exp(r1).after - exp(r1).before);
   });
 });
+
+import Dexie from "dexie";
+import { getCharacter as getCh2 } from "./repo";
+describe("データ構造の移行(v2→v3)", () => {
+  it("古い形のキャラクターが消えずに、性格の重みが数え直される", async () => {
+    const name = "test-migrate-" + k++;
+    const old = new Dexie(name);
+    old.version(2).stores({ player: "id", characters: "id", experiences: "id, date, category, analysisStatus, createdAt, sourceRef", statHistory: "id, at, eventId, kind, key", meta: "key" });
+    const { createCharacter } = await import("../../game/character/create");
+    const c = createCharacter("げんた", "t") as unknown as Record<string, unknown> & { personality: Record<string, { value: null; evidence: number }>; magicAffinity: Record<string, unknown>; appliedEventIds: string[] };
+    delete c.diagnosedAt;
+    for (const v of Object.values(c.personality)) delete (v as Record<string, unknown>).weight;
+    for (const v of Object.values(c.magicAffinity)) delete (v as Record<string, unknown>).base;
+    c.personality.competitiveness.evidence = 1; c.appliedEventIds = ["e1"];
+    await old.table("characters").put(c);
+    await old.table("experiences").put({ id: "e1", date: "2026-11-01", source: "manual", category: "sports", title: "試合", description: "", difficulty: 3, duration: 0, reflection: "", analysisStatus: "applied", proposedGrowth: null, approvedGrowth: { exp: 30, stats: {}, personalitySignals: { competitiveness: 1.5 }, magicSignals: {}, notes: [], engine: "rules-v1" }, createdAt: "t", appliedAt: "t" });
+    old.close();
+    useDb(new ArcanaDB(name)); await ensureInitialized();
+    const ch = await getCh2();
+    expect(ch.personality.competitiveness.weight).toBe(1.5);
+    expect(ch.personality.competitiveness.evidence).toBe(1);
+    expect(ch.magicAffinity.astral.base).toBeNull();
+    expect(ch.diagnosedAt).toBeNull();
+    expect(ch.appliedEventIds).toEqual(["e1"]);
+  });
+});

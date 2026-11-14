@@ -9,6 +9,7 @@ import SettingsPage from "../pages/Settings/SettingsPage";
 import AcademyPage from "../pages/Academy/AcademyPage";
 import EncyclopediaPage from "../pages/Encyclopedia/EncyclopediaPage";
 import EffectOverlay from "../components/EffectOverlay";
+import DiagnosisPage from "../pages/Diagnosis/DiagnosisPage";
 
 // GDD 12章の画面構成。スマホの下のメニューは5つまで(魔法・設定は学院から行ける)
 const NAV = [
@@ -56,6 +57,7 @@ export default function App() {
                 <Route path="/magic" element={<MagicPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/academy" element={<AcademyPage />} />
+                <Route path="/diagnosis" element={<DiagnosisPage />} />
                 <Route path="/encyclopedia" element={<EncyclopediaPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>

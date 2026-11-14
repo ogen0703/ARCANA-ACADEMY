@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { P } from "../../game/growth/rules";
 import { useGame } from "../../stores/game";
 import { renameCharacter } from "../../services/storage/repo";
 import { levelProgress } from "../../game/growth/engine";
@@ -56,24 +58,30 @@ export default function CharacterPage() {
         </div>
       </Panel>
 
-      <Panel title="性格" right={<span className="text-xs text-arcane-300">Phase 3 で形成</span>}>
-        <p className="mb-3 text-sm text-arcane-300">性格は1回の行動では決めず、たくさんの経験から少しずつ形づくられます。今は根拠になる経験の数だけを記録しています。</p>
+      <Panel title="性格の傾向">
+        <p className="mb-3 text-sm text-arcane-300">性格は1回の行動では決めず、根拠になる経験が{P.personalityMinEvidence}件たまったものから形になります。</p>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
-          {PERSONALITY_KEYS.map((k) => (
-            <li key={k} className="flex items-center justify-between rounded-lg bg-night-800/60 px-3 py-1.5">
-              <span>{PERSONALITY_LABELS[k]}</span>
-              <span className="num text-xs text-arcane-300">{ch.personality[k].value == null ? `未形成・根拠${ch.personality[k].evidence}件` : ch.personality[k].value}</span>
-            </li>
-          ))}
+          {[...PERSONALITY_KEYS].sort((a, b) => (ch.personality[b].value ?? -1) - (ch.personality[a].value ?? -1) || ch.personality[b].evidence - ch.personality[a].evidence).map((k) => {
+            const p = ch.personality[k];
+            return (
+              <li key={k} className="rounded-lg bg-night-800/60 px-3 py-1.5" data-trait={k}>
+                <div className="flex items-center justify-between">
+                  <span>{PERSONALITY_LABELS[k]}</span>
+                  <span className="num text-xs text-arcane-300">{p.value == null ? `あと${P.personalityMinEvidence - p.evidence}件で形に` : <span className="text-base text-gold-200">{p.value}</span>}</span>
+                </div>
+                <div className="mt-1">{p.value != null ? <Bar value={p.value} /> : <Bar value={p.evidence} max={P.personalityMinEvidence} tone="arcane" />}</div>
+              </li>
+            );
+          })}
         </ul>
       </Panel>
 
-      <Panel title="魔法適性" right={<span className="text-xs text-arcane-300">初期診断は Phase 3</span>}>
+      <Panel title="魔法適性" right={ch.diagnosedAt ? <Link to="/magic" className="text-xs text-candle">くわしく →</Link> : <Link to="/diagnosis" className="btn btn-primary px-3 py-1 text-xs">入学診断を受ける</Link>}>
         <ul className="space-y-2 text-sm">
           {MAGIC_KEYS.map((k) => (
             <li key={k} className="flex items-center justify-between gap-3">
               <span>{MAGIC_LABELS[k].name}</span>
-              <span className="num text-xs text-arcane-300">{ch.magicAffinity[k].value ?? "未診断"} ・ 兆し {ch.magicAffinity[k].signals.toFixed(1)}</span>
+              <span className="num text-xs text-arcane-300">{ch.magicAffinity[k].value != null ? <span className="text-base text-gold-200">{ch.magicAffinity[k].value}</span> : "未診断"} ・ 兆し {ch.magicAffinity[k].signals.toFixed(1)}</span>
             </li>
           ))}
         </ul>

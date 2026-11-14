@@ -11,10 +11,11 @@ export function createCharacter(name: string, now: string): Character {
     id: "hero", name, createdAt: now, updatedAt: now, level: 1, experience: 0,
     appearance: { hairColor: "夜の黒", eyeColor: "深い藍", robe: "見習いのローブ(紺)", aura: "まだ見えない" },
     basicStats: Object.fromEntries(STAT_KEYS.map((k) => [k, P.initialStat])) as Character["basicStats"],
-    personality: Object.fromEntries(PERSONALITY_KEYS.map((k) => [k, { value: null, evidence: 0 }])) as Character["personality"],
-    magicAffinity: Object.fromEntries(MAGIC_KEYS.map((k) => [k, { value: null, signals: 0 }])) as Character["magicAffinity"],
+    personality: Object.fromEntries(PERSONALITY_KEYS.map((k) => [k, { value: null, evidence: 0, weight: 0 }])) as Character["personality"],
+    magicAffinity: Object.fromEntries(MAGIC_KEYS.map((k) => [k, { value: null, signals: 0, base: null }])) as Character["magicAffinity"],
     learnedSpells: [], inventory: [], titles: [], achievements: [], relationships: [],
     history: { origin: "未解明", house: null, wand: null, wizardAge: null },
     appliedEventIds: [],
+    diagnosedAt: null,
   };
 }

@@ -56,6 +56,7 @@ export default function HomePage() {
             </div>
           ) : <p className="text-sm text-arcane-300">まだ成長の記録がありません。現実で経験したことを登録すると、魔法使いが成長します。</p>}
           {!!inbox?.added && <p className="mt-3 rounded-xl bg-arcane-500/15 px-3 py-2 text-sm text-arcane-300">✉ 第2の脳から新しい経験が {inbox.added} 件届いた</p>}
+          {!ch.diagnosedAt && <Link to="/diagnosis" className="mt-3 block rounded-xl bg-gold-500/10 px-3 py-2 text-sm text-gold-200">✧ 入学診断を受けて、魔法適性を決めよう →</Link>}
           {waiting > 0 && <Link to="/experience" className="mt-3 block rounded-xl bg-candle/10 px-3 py-2 text-sm text-candle">承認まちの成長が {waiting} 件あります →</Link>}
         </Panel>
 

@@ -17,4 +17,9 @@ Growth = { exp, stats(能力ごとの増分), personalitySignals, magicSignals, 
 - エクスポートJSON(app="arcana-academy", schemaVersion, player, character, experiences, statHistory)。新しいバージョンのファイルは古いアプリでは読み込まない
 
 ## 取り込みファイル(経験)
-{ app: "arcana-academy-experiences", source: "markdown"|"csv"|"diary"|"ai", note?, items: [{ date, category, title, description, difficulty, duration, reflection, sourceRef? }] }
+{ app: "arcana-academy-experiences", source: "markdown"|"csv"|"diary"|"ai", note?, items: [{ date, category, title, description, difficulty, duration, reflection, sourceRef?, ai? }] }
+
+## v3(Phase 3)
+- キャラクター:personality[k] に weight(兆しの強さの合計)、magicAffinity[k] に base(入学診断の出発点、未診断は null)、diagnosedAt を追加。移行時に反映済みの経験から weight を数え直す(既存の値は消さない)
+- 経験:ai?(AIの読み取り){ by, at, summary, personality: {キー:0〜1}, magic: {キー:0〜1}, reasons[] }。確定データ(approvedGrowth)とは別に持つ
+- meta:report:<期間ID>(成長レポートの講評。w:YYYY-MM-DD / m:YYYY-MM)

@@ -1,16 +1,73 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { buildReport, periodRange, PERIOD_LABELS, type PeriodKey } from "../../game/report";
+import { getMeta, setMeta } from "../../services/storage/repo";
+import { buildReportPrompt } from "../../services/ai/bridge";
+import AiBridge from "../../components/AiBridge";
+import { Bar } from "../../components/ui";
+import { MAGIC_LABELS as ML, PERSONALITY_LABELS } from "../../schemas";
 import { useGame } from "../../stores/game";
 import { MAGIC_KEYS, MAGIC_LABELS, STAT_LABELS, type StatKey } from "../../schemas";
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { Panel } from "../../components/ui";
 
 const TABS = [
+  { id: "report", label: "成長レポート" },
   { id: "timeline", label: "成長年表" },
   { id: "magic", label: "魔法図鑑" },
   { id: "creatures", label: "魔法生物図鑑" },
   { id: "explore", label: "探索記録" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
+
+type Comment = { text: string; at: string };
+function Report() {
+  const { experiences, history } = useGame();
+  const [pk, setPk] = useState<PeriodKey>("thisWeek");
+  const range = periodRange(pk, new Date());
+  const r = buildReport(experiences, history, range.from, range.to);
+  const [comment, setComment] = useState<Comment | undefined>();
+  useEffect(() => { let alive = true; getMeta<Comment>("report:" + range.id).then((c) => alive && setComment(c)); return () => { alive = false; }; }, [range.id]);
+  const maxStat = Math.max(1, ...r.topStats.map(([, v]) => v));
+  return (
+    <div className="grid gap-4" data-testid="report">
+      <div className="flex flex-wrap gap-1">
+        {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map((k) => (
+          <button key={k} onClick={() => setPk(k)} className={`rounded-lg border px-3 py-1 text-xs ${pk === k ? "border-gold-300 bg-gold-500/20 text-gold-200" : "border-arcane-500/30 text-arcane-300"}`}>{PERIOD_LABELS[k]}</button>
+        ))}
+        <span className="ml-auto self-center text-[11px] text-arcane-300/70">{range.from} 〜 {range.to}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {[["経験", `${r.evs.length}件`], ["EXP", `+${r.exp}`], ["レベル", r.levels.length ? `${r.levels[0].before}→${r.levels[r.levels.length - 1].after}` : "—"]].map(([l, v]) => (
+          <div key={l} className="rounded-xl bg-night-800/60 p-2"><p className="label">{l}</p><p className="num font-display text-xl text-gold-200">{v}</p></div>
+        ))}
+      </div>
+      <p className="rounded-xl border-l-2 border-gold-500/50 bg-night-800/40 p-3 text-sm">{r.comment}</p>
+      {r.evs.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="label mb-1">伸びた能力</p>
+            <ul className="space-y-1.5">{r.topStats.map(([k, v]) => <li key={k}><div className="flex justify-between text-sm"><span>{STAT_LABELS[k].name}</span><span className="num text-gold-200">+{v}</span></div><Bar value={v} max={maxStat} /></li>)}</ul>
+          </div>
+          <div className="space-y-2 text-sm">
+            <p className="label">表れた性格の傾向</p>
+            <p>{r.topPers.map(([k]) => PERSONALITY_LABELS[k]).join(" ・ ") || "—"}</p>
+            <p className="label">強まった魔法の兆し</p>
+            <p>{r.topMagic.map(([k]) => ML[k].name).join(" ・ ") || "—"}</p>
+          </div>
+        </div>
+      )}
+      {r.evs.length > 0 && (
+        <div className="grid gap-2">
+          <p className="label">教官の講評(AI)</p>
+          {comment && <blockquote className="rounded-xl bg-arcane-500/10 p-3 font-serif text-sm leading-relaxed" data-testid="report-comment">{comment.text}<span className="mt-1 block text-[10px] text-arcane-300/60">{new Date(comment.at).toLocaleDateString("ja-JP")} にもらった講評</span></blockquote>}
+          <AiBridge testId="ai-bridge-report" prompt={buildReportPrompt(r.forAi)} replyLabel="AIの講評を貼り付ける" submitLabel="講評を残す"
+            onReply={async (t) => { const c = { text: t.trim().slice(0, 1200), at: new Date().toISOString() }; await setMeta("report:" + range.id, c); setComment(c); return "講評を残した"; }} />
+          <p className="text-[11px] text-arcane-300/60">AIに渡すのは数字と経験のタイトルだけ(くわしい内容や振り返りは渡しません)。</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Timeline() {
   const { experiences, history } = useGame();
@@ -80,7 +137,7 @@ const Empty = ({ text }: { text: string }) => (
 );
 
 export default function EncyclopediaPage() {
-  const [tab, setTab] = useState<Tab>("timeline");
+  const [tab, setTab] = useState<Tab>("report");
   return (
     <Panel title="図鑑 ・ 星辰の大図書館">
       <div className="-mx-1 mb-4 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="図鑑の種類">
@@ -90,6 +147,7 @@ export default function EncyclopediaPage() {
         ))}
       </div>
       <div role="tabpanel">
+        {tab === "report" && <Report />}
         {tab === "timeline" && <Timeline />}
         {tab === "magic" && <MagicBook />}
         {tab === "creatures" && <Empty text="まだ出会った魔法生物はいない。魔法生物保護区がひらく Phase 5 から記録されます。" />}

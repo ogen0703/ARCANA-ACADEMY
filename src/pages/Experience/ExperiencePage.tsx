@@ -8,6 +8,10 @@ import { CATEGORY_KEYS, STAT_LABELS, type CategoryKey, type ExperienceEvent, typ
 import { Panel, statusPill } from "../../components/ui";
 import { todayLocal } from "../../utils/id";
 import ImportPanel from "./ImportPanel";
+import AiBridge from "../../components/AiBridge";
+import { buildAnalysisPrompt, parseInsightReply } from "../../services/ai/bridge";
+import { setExperienceAi } from "../../services/storage/repo";
+import { MAGIC_LABELS, PERSONALITY_LABELS, type MagicKey, type PersonalityKey } from "../../schemas";
 
 const blank = (): NewExperience => ({ date: todayLocal(), category: "sports", title: "", description: "", difficulty: 3, duration: 60, reflection: "" });
 
@@ -15,6 +19,7 @@ function ProposalCard({ ev }: { ev: ExperienceEvent }) {
   const { character, run, approve } = useGame();
   const [msg, setMsg] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   if (!character) return null;
   const g = ev.analysisStatus === "applied" ? ev.approvedGrowth : ev.proposedGrowth;
   const preview = ev.analysisStatus === "proposed" && g ? finalizeStats(g.stats, character.basicStats) : g?.stats ?? {};
@@ -29,6 +34,18 @@ function ProposalCard({ ev }: { ev: ExperienceEvent }) {
       <p className="mt-1 font-serif text-lg">{ev.title}</p>
       {ev.description && <p className="whitespace-pre-wrap text-sm text-arcane-300">{ev.description}</p>}
       {ev.reflection && <p className="mt-1 whitespace-pre-wrap border-l-2 border-gold-500/40 pl-2 text-sm italic text-[#d9d2ef]">{ev.reflection}</p>}
+      {ev.ai && (
+        <div className="mt-2 rounded-lg border border-arcane-500/25 bg-arcane-500/10 p-2" data-testid="ai-insight">
+          <p className="label mb-1">AIの読み取り({ev.ai.by})</p>
+          {ev.ai.summary && <p className="text-sm">{ev.ai.summary}</p>}
+          <ul className="mt-1 flex flex-wrap gap-1.5">
+            {Object.entries(ev.ai.personality).map(([k, v]) => <li key={k} className="pill bg-arcane-500/20 text-arcane-300">{PERSONALITY_LABELS[k as PersonalityKey]} {Math.round(v * 100)}%</li>)}
+            {Object.entries(ev.ai.magic).map(([k, v]) => <li key={k} className="pill bg-gold-500/10 text-gold-200">{MAGIC_LABELS[k as MagicKey].name} {Math.round(v * 100)}%</li>)}
+          </ul>
+          {ev.ai.reasons.length > 0 && <p className="mt-1 text-[11px] text-arcane-300/80">{ev.ai.reasons.join(" ・ ")}</p>}
+          <p className="mt-1 text-[10px] text-arcane-300/60">性格と魔法の兆しにだけ使います(能力値はルールで決まります)</p>
+        </div>
+      )}
       {g && ev.analysisStatus !== "rejected" && (
         <div className="mt-2 rounded-lg bg-night-900/70 p-2">
           <p className="label mb-1">{ev.analysisStatus === "applied" ? "反映した成長" : "成長の見込み(承認すると反映)"}</p>
@@ -43,6 +60,12 @@ function ProposalCard({ ev }: { ev: ExperienceEvent }) {
         <div className="mt-2 flex flex-wrap gap-2">
           <button className="btn btn-primary" onClick={() => act(() => approve([ev.id]), "成長を反映した!")}>承認して反映</button>
           <button className="btn" onClick={() => act(() => rejectExperience(ev.id), "見送りにした")}>見送る</button>
+          <button className="btn-ghost rounded-lg px-2 text-xs text-arcane-300" onClick={() => setAiOpen(!aiOpen)} aria-expanded={aiOpen}>{ev.ai ? "AIに読み取りなおしてもらう" : "AIに読み取ってもらう"}</button>
+        </div>
+      )}
+      {ev.analysisStatus === "proposed" && aiOpen && (
+        <div className="mt-2">
+          <AiBridge testId="ai-bridge-exp" prompt={buildAnalysisPrompt(ev)} onReply={async (t) => { const ai = parseInsightReply(t); await run(() => setExperienceAi(ev.id, ai)); setAiOpen(false); return "AIの読み取りを付けた"; }} />
         </div>
       )}
       {ev.analysisStatus !== "applied" && (
@@ -75,7 +98,7 @@ export default function ExperiencePage() {
         <form className="grid gap-3" onSubmit={async (e) => {
           e.preventDefault();
           if (!f.title.trim()) { setMsg("何をしたか(タイトル)を入れてね"); return; }
-          try { await run(() => addExperience({ ...f, title: f.title.trim() })); setF(blank()); setMsg("登録した。右の一覧で成長の見込みを確認して承認してね"); }
+          try { await run(() => addExperience({ ...f, title: f.title.trim() })); setF(blank()); setMsg("登録した。「登録した経験」で成長の見込みを確認して承認してね"); }
           catch (err) { setMsg(err instanceof Error ? "入力を確認してね" : "保存できませんでした"); }
         }}>
           <div className="grid grid-cols-2 gap-3">

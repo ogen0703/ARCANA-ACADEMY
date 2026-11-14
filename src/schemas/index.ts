@@ -37,12 +37,12 @@ const stat0to100 = z.number().min(0).max(100);
 export const StatsSchema = z.object(Object.fromEntries(STAT_KEYS.map((k) => [k, stat0to100])) as Record<StatKey, typeof stat0to100>);
 export type Stats = z.infer<typeof StatsSchema>;
 
-/** 性格:値は長期の行動から形成(Phase 3)。それまでは未形成(null) */
-const personalityValue = z.object({ value: z.number().min(0).max(100).nullable(), evidence: z.number().int().min(0) });
+/** 性格:長期の行動から形成。根拠(evidence:経験の数、weight:兆しの強さの合計)がたまるまでは未形成(null) */
+const personalityValue = z.object({ value: z.number().min(0).max(100).nullable(), evidence: z.number().int().min(0), weight: z.number().min(0).default(0) });
 export const PersonalitySchema = z.object(Object.fromEntries(PERSONALITY_KEYS.map((k) => [k, personalityValue])) as Record<PersonalityKey, typeof personalityValue>);
 
-/** 魔法適性:初期診断で判定(Phase 3)。それまでは未診断(null) */
-const affinityValue = z.object({ value: z.number().min(0).max(100).nullable(), signals: z.number().min(0) });
+/** 魔法適性:入学診断で base を決め、経験の兆し(signals)で伸びる。診断前は未診断(null) */
+const affinityValue = z.object({ value: z.number().min(0).max(100).nullable(), signals: z.number().min(0), base: z.number().min(0).max(100).nullable().default(null) });
 export const MagicAffinitySchema = z.object(Object.fromEntries(MAGIC_KEYS.map((k) => [k, affinityValue])) as Record<MagicKey, typeof affinityValue>);
 
 /* ---------- プレイヤー(現実の情報。ゲーム内キャラクターとは分離) ---------- */
@@ -77,6 +77,8 @@ export const CharacterSchema = z.object({
   /** 生い立ち・物語上の設定(出身:未解明 など) */
   history: z.object({ origin: z.string(), house: z.string().nullable(), wand: z.string().nullable(), wizardAge: z.string().nullable() }),
   appliedEventIds: z.array(z.string()),
+  /** 入学診断をした日時(1回だけ) */
+  diagnosedAt: iso.nullable().default(null),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -93,6 +95,21 @@ export const GrowthSchema = z.object({
   engine: z.string(),
 });
 export type Growth = z.infer<typeof GrowthSchema>;
+
+/**
+ * AIによる経験の読み取り(Phase 3)。能力値には使わず、性格と魔法適性の「兆し」にだけ足す。
+ * 数値は 0〜1(その傾向がどれくらい表れているか)。確定データとは分けて持つ
+ */
+const unit = z.number().min(0).max(1);
+export const AiInsightSchema = z.object({
+  by: z.string().min(1).max(40),
+  at: iso,
+  summary: z.string().max(300),
+  personality: z.record(z.enum(PERSONALITY_KEYS), unit).default({}),
+  magic: z.record(z.enum(MAGIC_KEYS), unit).default({}),
+  reasons: z.array(z.string().max(120)).max(5).default([]),
+});
+export type AiInsight = z.infer<typeof AiInsightSchema>;
 
 export const ANALYSIS_STATUS = ["pending", "proposed", "applied", "rejected"] as const;
 export const ExperienceEventSchema = z.object({
@@ -113,6 +130,7 @@ export const ExperienceEventSchema = z.object({
   appliedAt: iso.nullable(),
   /** 取り込み元の目印(同じ記録を2回取り込まないため)。手入力は無し */
   sourceRef: z.string().max(200).optional(),
+  ai: AiInsightSchema.optional(),
 });
 export type ExperienceEvent = z.infer<typeof ExperienceEventSchema>;
 
@@ -150,6 +168,7 @@ export const ImportItemSchema = z.object({
   duration: z.number().int().min(0).max(24 * 60).default(0),
   reflection: z.string().max(2000).default(""),
   sourceRef: z.string().max(200).optional(),
+  ai: AiInsightSchema.optional(),
 });
 export type ImportItem = z.infer<typeof ImportItemSchema>;
 export const ImportFileSchema = z.object({

@@ -4,7 +4,7 @@
  */
 import type { CategoryKey, MagicKey, PersonalityKey, StatKey } from "../../schemas";
 
-export const RULES_VERSION = "rules-v1";
+export const RULES_VERSION = "rules-v2";
 
 export const CATEGORY_DEFS: Record<CategoryKey, {
   label: string; example: string;
@@ -39,6 +39,14 @@ export const P = {
   perEventStatCap: 3, // 1回の経験で1能力が上がる上限
   imbalanceMargin: 30, // 平均+30を超えた能力は伸びが半分
   statMax: 100,
+  // ---- Phase 3(仮)----
+  aiSignalWeight: 1, // AIが読み取った傾向(0〜1)を、ルールの兆しと同じ重みで足す
+  personalityMinEvidence: 5, // 根拠になる経験がこの数たまったら性格の値が形になる
+  personalityScale: 15, // 性格の値 = 20 + 80×(1−e^(−兆しの合計/15))
+  affinityGrowthMax: 30, // 魔法適性 = 診断の基礎値 + 30×(1−e^(−兆しの合計/20))
+  affinityScale: 20,
+  diagnosisMin: 20, // 入学診断の基礎値:いちばん強い系統が 70、ほかは割合で 20〜70
+  diagnosisRange: 50,
 };
 
 /** 次のレベルまでに必要な経験値(レベルLからL+1) */

@@ -36,7 +36,7 @@ export default function SettingsPage() {
           <label className="grid gap-1"><span className="label">呼び名</span><input id="pl-name" className="field" defaultValue={player.displayName} onBlur={(e) => e.target.value.trim() && savePlayer({ displayName: e.target.value.trim() })} /></label>
           <label className="grid gap-1"><span className="label">誕生日</span><input id="pl-bd" type="date" className="field" defaultValue={player.birthday} onBlur={(e) => savePlayer({ birthday: e.target.value || undefined })} /></label>
           <label className="flex items-center gap-2"><input id="pl-photo" type="checkbox" checked={player.photoConsent} onChange={(e) => savePlayer({ photoConsent: e.target.checked })} />本人の写真を外見づくりに使ってよい(使うのは Phase 5 以降)</label>
-          <label className="flex items-center gap-2"><input id="pl-ai" type="checkbox" checked={player.aiSendConsent} onChange={(e) => savePlayer({ aiSendConsent: e.target.checked })} />外部AIへの送信を許可する(Phase 3。送る前に毎回確認します)</label>
+          <label className="flex items-center gap-2"><input id="pl-ai" type="checkbox" checked={player.aiSendConsent} onChange={(e) => savePlayer({ aiSendConsent: e.target.checked })} />外部AIを使う(AIに渡す文章を作ってコピーできる。アプリからは送らず、コピーの前に毎回内容を確認できます)</label>
         </div>
       </Panel>
 

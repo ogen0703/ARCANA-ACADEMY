@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { MAGIC_KEYS, MAGIC_LABELS } from "../../schemas";
 import { Bar, Panel } from "../../components/ui";
@@ -11,14 +12,16 @@ export default function MagicPage() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       <Panel title="魔法系統と適性">
-        <p className="mb-3 text-sm text-arcane-300">魔法適性は初期診断(Phase 3)で決まり、そのあとも成長で変わっていきます。今は、経験から見えてきた「兆し」を記録しています。</p>
+        {ch.diagnosedAt
+          ? <p className="mb-3 text-sm text-arcane-300">適性は入学診断の結果を出発点に、経験から見えた「兆し」で育っていきます。</p>
+          : <div className="mb-3 rounded-xl bg-candle/10 p-3 text-sm"><p>まだ入学診断を受けていません。6つの問いに答えると、魔法適性の出発点が決まります。</p><Link to="/diagnosis" className="btn btn-primary mt-2 inline-block">入学診断を受ける</Link></div>}
         <ul className="grid gap-3 sm:grid-cols-2">
           {MAGIC_KEYS.map((k) => (
             <li key={k} className="rounded-xl border border-gold-500/20 bg-night-800/50 p-3">
               <p className="font-serif text-gold-200">{MAGIC_LABELS[k].name}</p>
               <p className="text-xs text-arcane-300">{MAGIC_LABELS[k].desc}</p>
-              <div className="mt-2 flex items-center justify-between text-xs"><span>適性:{ch.magicAffinity[k].value ?? "未診断"}</span><span className="num text-arcane-300">兆し {ch.magicAffinity[k].signals.toFixed(1)}</span></div>
-              <div className="mt-1"><Bar value={ch.magicAffinity[k].signals} max={maxSig} tone="arcane" /></div>
+              <div className="mt-2 flex items-center justify-between text-xs"><span>適性 <span className="num text-base text-gold-200">{ch.magicAffinity[k].value ?? "未診断"}</span></span><span className="num text-arcane-300">{ch.magicAffinity[k].base != null && `診断 ${ch.magicAffinity[k].base} ・ `}兆し {ch.magicAffinity[k].signals.toFixed(1)}</span></div>
+              <div className="mt-1">{ch.magicAffinity[k].value != null ? <Bar value={ch.magicAffinity[k].value!} /> : <Bar value={ch.magicAffinity[k].signals} max={maxSig} tone="arcane" />}</div>
             </li>
           ))}
         </ul>
