@@ -31,3 +31,16 @@ body {
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes flicker { 0%,100% { opacity: .85 } 45% { opacity: 1 } 60% { opacity: .7 } }
 }
+
+/* ---- 承認・レベルアップの演出 ---- */
+.fx-root { animation: fx-fade .25s ease-out; }
+.fx-sparks span { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 9999px; background: #f4d68c; box-shadow: 0 0 10px #c4b0ff; opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .fx-circle { animation: fx-circle 1.1s cubic-bezier(.2,.8,.2,1) both; }
+  .fx-text { animation: fx-rise .7s .15s cubic-bezier(.2,.8,.2,1) both; }
+  .fx-sparks span { animation: fx-spark 1.2s ease-out forwards; }
+  @keyframes fx-circle { from { transform: scale(.3) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes fx-rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fx-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-170px); } }
+}
+@keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }

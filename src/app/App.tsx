@@ -6,13 +6,19 @@ import CharacterPage from "../pages/Character/CharacterPage";
 import ExperiencePage from "../pages/Experience/ExperiencePage";
 import MagicPage from "../pages/Magic/MagicPage";
 import SettingsPage from "../pages/Settings/SettingsPage";
+import AcademyPage from "../pages/Academy/AcademyPage";
+import EncyclopediaPage from "../pages/Encyclopedia/EncyclopediaPage";
+import EffectOverlay from "../components/EffectOverlay";
 
+// GDD 12章の画面構成。スマホの下のメニューは5つまで(魔法・設定は学院から行ける)
 const NAV = [
-  { to: "/", label: "ホーム", icon: "✦" },
-  { to: "/character", label: "キャラクター", icon: "♜" },
-  { to: "/experience", label: "経験登録", icon: "✎" },
-  { to: "/magic", label: "魔法", icon: "✧" },
-  { to: "/settings", label: "設定", icon: "⚙" },
+  { to: "/", label: "ホーム", icon: "✦", mobile: true },
+  { to: "/character", label: "キャラクター", icon: "♜", mobile: true },
+  { to: "/experience", label: "経験登録", icon: "✎", mobile: true },
+  { to: "/magic", label: "魔法", icon: "✧", mobile: false },
+  { to: "/academy", label: "学院", icon: "⌂", mobile: true },
+  { to: "/encyclopedia", label: "図鑑", icon: "❖", mobile: true },
+  { to: "/settings", label: "設定", icon: "⚙", mobile: false },
 ];
 
 export default function App() {
@@ -32,13 +38,14 @@ export default function App() {
           <span className="font-display text-xl tracking-[0.25em] text-gold-300 sm:text-2xl">ARCANA ACADEMY</span>
           <span className="hidden text-xs text-arcane-300/70 sm:inline">失われた星と、魂を継ぐ魔法使い</span>
         </div>
-        <nav className="hidden gap-1 md:flex" aria-label="メニュー">
+        <nav className="hidden gap-1 lg:flex" aria-label="メニュー">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `rounded-lg px-3 py-1.5 text-sm ${isActive ? "bg-gold-500/15 text-gold-200" : "text-arcane-300 hover:text-gold-200"}`}>{n.label}</NavLink>
           ))}
         </nav>
+        <NavLink to="/settings" className="rounded-lg px-2 py-1 text-lg text-arcane-300 lg:hidden" aria-label="設定">⚙</NavLink>
       </header>
-      <main className="flex-1 pb-28 md:pb-10">
+      <main className="flex-1 pb-28 lg:pb-10">
         {!ready ? <p className="py-20 text-center text-arcane-300">学院の扉をひらいています…</p>
           : error ? <p className="py-20 text-center text-candle">データを読み込めませんでした:{error}</p>
             : (
@@ -48,19 +55,22 @@ export default function App() {
                 <Route path="/experience" element={<ExperiencePage />} />
                 <Route path="/magic" element={<MagicPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/academy" element={<AcademyPage />} />
+                <Route path="/encyclopedia" element={<EncyclopediaPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>
             )}
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-gold-500/20 bg-night-950/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="メニュー">
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-gold-500/20 bg-night-950/95 backdrop-blur lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="メニュー">
         <div className="mx-auto grid max-w-md grid-cols-5">
-          {NAV.map((n) => (
+          {NAV.filter((n) => n.mobile).map((n) => (
             <NavLink key={n.to} to={n.to} end className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] ${isActive ? "text-gold-300" : "text-arcane-300/70"}`}>
               <span className="text-lg leading-none" aria-hidden="true">{n.icon}</span>{n.label}
             </NavLink>
           ))}
         </div>
       </nav>
+      <EffectOverlay />
     </div>
   );
 }

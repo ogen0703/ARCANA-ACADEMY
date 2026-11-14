@@ -19,6 +19,7 @@ export async function ensureInitialized() {
 export const getCharacter = async () => CharacterSchema.parse(await db.characters.get("hero"));
 export const getPlayer = async () => PlayerProfileSchema.parse(await db.player.get("player"));
 export const listExperiences = () => db.experiences.orderBy("createdAt").reverse().toArray();
+export const getExperience = (id: string) => db.experiences.get(id);
 export const listHistory = () => db.statHistory.orderBy("at").reverse().toArray();
 
 export async function renameCharacter(name: string) {

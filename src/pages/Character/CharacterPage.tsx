@@ -3,10 +3,11 @@ import { useGame } from "../../stores/game";
 import { renameCharacter } from "../../services/storage/repo";
 import { levelProgress } from "../../game/growth/engine";
 import { MAGIC_KEYS, MAGIC_LABELS, PERSONALITY_KEYS, PERSONALITY_LABELS, STAT_KEYS, STAT_LABELS, type StatKey } from "../../schemas";
-import { Bar, HeroSilhouette, Panel, StatRadar } from "../../components/ui";
+import { Bar, Panel, StatRadar } from "../../components/ui";
+import Academy3D from "../../components/three/Academy3D";
 
 export default function CharacterPage() {
-  const { character: ch, experiences, history, run } = useGame();
+  const { character: ch, experiences, history, run, burst } = useGame();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(ch?.name ?? "");
   if (!ch) return null;
@@ -19,7 +20,7 @@ export default function CharacterPage() {
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel title="プロフィール">
         <div className="flex gap-4">
-          <HeroSilhouette className="h-36 shrink-0" />
+          <Academy3D mode="portrait" burst={burst} className="h-48 w-32 shrink-0 overflow-hidden rounded-xl sm:h-56 sm:w-40" />
           <div className="min-w-0 flex-1 space-y-1 text-sm">
             {editing ? (
               <form className="flex gap-2" onSubmit={async (e) => { e.preventDefault(); if (name.trim()) { await run(() => renameCharacter(name)); setEditing(false); } }}>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGame } from "../../stores/game";
-import { addExperience, approveExperience, deleteExperience, rejectExperience, type NewExperience } from "../../services/storage/repo";
+import { addExperience, deleteExperience, rejectExperience, type NewExperience } from "../../services/storage/repo";
 import { analyzer } from "../../services/ai";
 import { finalizeStats } from "../../game/growth/engine";
 import { CATEGORY_DEFS, DIFFICULTY_LABELS } from "../../game/growth/rules";
@@ -12,7 +12,7 @@ import ImportPanel from "./ImportPanel";
 const blank = (): NewExperience => ({ date: todayLocal(), category: "sports", title: "", description: "", difficulty: 3, duration: 60, reflection: "" });
 
 function ProposalCard({ ev }: { ev: ExperienceEvent }) {
-  const { character, run } = useGame();
+  const { character, run, approve } = useGame();
   const [msg, setMsg] = useState("");
   const [confirmDel, setConfirmDel] = useState(false);
   if (!character) return null;
@@ -41,7 +41,7 @@ function ProposalCard({ ev }: { ev: ExperienceEvent }) {
       )}
       {ev.analysisStatus === "proposed" && (
         <div className="mt-2 flex flex-wrap gap-2">
-          <button className="btn btn-primary" onClick={() => act(() => approveExperience(ev.id), "成長を反映した!")}>承認して反映</button>
+          <button className="btn btn-primary" onClick={() => act(() => approve([ev.id]), "成長を反映した!")}>承認して反映</button>
           <button className="btn" onClick={() => act(() => rejectExperience(ev.id), "見送りにした")}>見送る</button>
         </div>
       )}
@@ -58,7 +58,7 @@ function ProposalCard({ ev }: { ev: ExperienceEvent }) {
 }
 
 export default function ExperiencePage() {
-  const { experiences, run } = useGame();
+  const { experiences, run, approve } = useGame();
   const [f, setF] = useState<NewExperience>(blank);
   const [msg, setMsg] = useState("");
   const [filter, setFilter] = useState<"all" | "proposed" | "applied">("all");
@@ -117,8 +117,8 @@ export default function ExperiencePage() {
           <div className="mb-3 rounded-xl bg-candle/10 px-3 py-2 text-sm">
             {bulk ? (
               <span>承認まちの{waiting.length}件を、見込みどおりに全部反映する? <button className="btn btn-primary ml-1 px-3 py-1 text-xs" onClick={async () => {
-                let ok = 0; for (const e of waiting) { try { await approveExperience(e.id); ok++; } catch { /* 反映済みなどは飛ばす */ } }
-                await run(async () => undefined); setBulk(false); setMsg(`${ok}件を反映した`);
+                // 反映済みなどは飛ばして続ける
+                const ok = await approve(waiting.map((e) => e.id)).catch(() => 0); setBulk(false); setMsg(`${ok}件を反映した`);
               }}>反映する</button> <button className="btn ml-1 px-3 py-1 text-xs" onClick={() => setBulk(false)}>やめる</button></span>
             ) : <button className="text-candle underline-offset-2 hover:underline" onClick={() => setBulk(true)}>承認まちの{waiting.length}件をまとめて反映する…</button>}
           </div>
