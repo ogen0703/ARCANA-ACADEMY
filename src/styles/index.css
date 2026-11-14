@@ -66,3 +66,4 @@ body {
   @keyframes art-floor { 0%,100% { opacity: .45 } 50% { opacity: .65 } }
   @keyframes art-mist { from { transform: translateX(-4%) } to { transform: translateX(4%) } }
 }
+.art-hero-burst { filter: drop-shadow(0 0 18px rgba(244,214,140,.55)) brightness(1.08); transition: filter .4s; }

@@ -24,7 +24,7 @@ export default function HomePage() {
     <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
       <section className="panel relative overflow-hidden p-0">
         <div className="relative">
-          <Academy3D mode="hall" burst={burst} className="h-[340px] w-full sm:h-[400px]" />
+          <Academy3D mode="hall" burst={burst} className="h-[440px] w-full sm:h-[460px]" />
           <p className="label pointer-events-none absolute left-3 top-3 rounded-md bg-night-950/50 px-2 py-0.5" data-testid="ambience">{ambienceOf(new Date()).label}</p>
         </div>
         <div className="relative grid place-items-center px-4 pb-4 pt-3">

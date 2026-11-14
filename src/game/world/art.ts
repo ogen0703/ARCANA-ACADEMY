@@ -9,7 +9,9 @@ export const ART = {
   hero: `${base}art/hero.webp`,
   areas: { academy: `${base}art/area-academy.webp`, library: `${base}art/area-library.webp` } as Record<string, string>,
 };
-/** 主人公の立ち絵の置き方(広間の高さに対する%)と、杖の光の玉の位置(立ち絵の中の割合) */
-export const HERO_LAYOUT = { heightPct: 80, bottomPct: 4, orb: { x: 0.8, y: 0.16 } };
-/** 床の魔法陣の中心(広間の画像の中の割合) */
-export const FLOOR = { x: 0.5, y: 0.86, widthPct: 62 };
+/** 広間の画像の縦横比(1536×1024) */
+export const HALL_ASPECT = 1.5;
+/** 主人公の立ち絵の置き方(広間の画像に対する割合)。足元の位置・背の高さ・杖の光の玉の位置(立ち絵の中の割合) */
+export const HERO_LAYOUT = { x: 0.5, feetY: 0.9, heightPct: 66, orb: { x: 0.131, y: 0.118 } };
+/** 床の魔法陣の中心と幅(広間の画像に対する割合) */
+export const FLOOR = { x: 0.5, y: 0.775, widthPct: 56 };
