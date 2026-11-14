@@ -70,7 +70,7 @@ function GothicWindows({ color }: { color: string }) {
   );
 }
 
-function FloorCircle({ burst }: { burst: number }) {
+export function FloorCircle({ burst }: { burst: number }) {
   const tex = useMemo(() => makeMagicCircleTexture(), []);
   const ref = useRef<THREE.Mesh>(null);
   const start = useRef(-10);
@@ -96,7 +96,7 @@ function FloorCircle({ burst }: { burst: number }) {
 }
 
 /** 季節の粒子(春:花びら色、夏:蛍、秋:落ち葉色、冬:雪)+雨 */
-function Particles({ season, weather, count = 260 }: { season: SeasonKey; weather: WeatherKey; count?: number }) {
+export function Particles({ season, weather, count = 260 }: { season: SeasonKey; weather: WeatherKey; count?: number }) {
   const def = SEASON[season];
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry(); const p = new Float32Array(count * 3);

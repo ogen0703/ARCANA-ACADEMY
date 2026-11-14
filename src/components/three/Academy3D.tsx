@@ -2,6 +2,9 @@ import { Component, Suspense, lazy, useEffect, useState, type ReactNode } from "
 import { hasWebGL } from "./webgl";
 import { ambienceOf } from "../../game/world/ambience";
 import { HeroSilhouette, MagicCircle } from "../ui";
+import { ART } from "../../game/world/art";
+import { useImageReady } from "./useImageReady";
+import ArtScene from "./ArtScene";
 
 // three.js は重いので、必要になったときにだけ読み込む(最初の表示を速くするため)
 const AcademyScene = lazy(() => import("./AcademyScene"));
@@ -33,6 +36,10 @@ export default function Academy3D({ mode = "hall", burst = 0, className = "" }: 
   const now = useNow();
   const a = ambienceOf(now);
   const fb = <Fallback mode={mode} className={className} />;
+  // 一枚絵(背景と立ち絵)がそろっていれば、それを主役にする
+  const bg = useImageReady(ART.hall[a.time]), hero = useImageReady(ART.hero);
+  if (bg === "ok" && hero === "ok") return <ArtScene time={a.time} season={a.season} weather={a.weather} mode={mode} burst={burst} className={className} />;
+  if (bg === "loading" || hero === "loading") return <div className={`bg-night-950 ${className}`} />;
   if (!hasWebGL()) return fb;
   return (
     <Boundary fallback={fb}>

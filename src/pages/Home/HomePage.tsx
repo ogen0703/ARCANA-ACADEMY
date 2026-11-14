@@ -37,7 +37,7 @@ export default function HomePage() {
             </div>
             <Bar value={prog.inLevel} max={prog.need} tone="arcane" />
           </div>
-          <p className="mt-3 text-[11px] text-arcane-300/50">主人公はドラッグで回せます ・ 姿は仮(外見の進化は Phase 5)</p>
+          <p className="mt-3 text-[11px] text-arcane-300/50">主人公の姿は、経験とともに進化していく(Phase 5)</p>
         </div>
       </section>
 

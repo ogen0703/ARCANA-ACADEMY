@@ -1,6 +1,20 @@
 import { Link } from "react-router-dom";
 import { AREAS } from "../../game/world/areas";
 import { Panel } from "../../components/ui";
+import { ART } from "../../game/world/art";
+import { useImageReady } from "../../components/three/useImageReady";
+
+/** 施設の絵(あれば)。無いあいだは紋章を表示 */
+function AreaArt({ id, glyph, open }: { id: string; glyph: string; open: boolean }) {
+  const src = ART.areas[id];
+  const st = useImageReady(src);
+  if (src && st === "ok") return <img src={src} alt="" className="mb-2 aspect-[3/2] w-full rounded-lg object-cover" loading="lazy" />;
+  return (
+    <div className={`mb-2 grid h-14 place-items-center rounded-lg sm:h-20 ${open ? "bg-[radial-gradient(circle_at_50%_60%,rgba(244,214,140,0.22),rgba(42,46,110,0.35)_60%,transparent)]" : "bg-night-800/60"}`}>
+      <span className={`font-serif text-4xl ${open ? "text-gold-300 drop-shadow-[0_0_10px_rgba(244,214,140,0.5)]" : "text-arcane-300/40"}`} aria-hidden="true">{glyph}</span>
+    </div>
+  );
+}
 
 export default function AcademyPage() {
   return (
@@ -11,9 +25,7 @@ export default function AcademyPage() {
           {AREAS.map((a) => {
             const body = (
               <>
-                <div className={`mb-2 grid h-14 place-items-center sm:h-20 rounded-lg ${a.open ? "bg-[radial-gradient(circle_at_50%_60%,rgba(244,214,140,0.22),rgba(42,46,110,0.35)_60%,transparent)]" : "bg-night-800/60"}`}>
-                  <span className={`font-serif text-4xl ${a.open ? "text-gold-300 drop-shadow-[0_0_10px_rgba(244,214,140,0.5)]" : "text-arcane-300/40"}`} aria-hidden="true">{a.glyph}</span>
-                </div>
+                <AreaArt id={a.id} glyph={a.glyph} open={a.open} />
                 <p className="font-serif text-base text-gold-200 sm:text-lg">{a.name}</p>
                 <p className="text-sm text-arcane-300">{a.desc}</p>
                 <p className={`mt-2 text-xs ${a.open ? "text-candle" : "text-arcane-300/60"}`}>{a.open ? `${a.action} →` : `🔒 ${a.when}`}</p>

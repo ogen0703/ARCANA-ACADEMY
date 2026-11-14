@@ -44,3 +44,25 @@ body {
   @keyframes fx-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-170px); } }
 }
 @keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- 一枚絵の学院の演出 ---- */
+.art-floor { aspect-ratio: 3 / 1; transform: translate(-50%, -50%); border-radius: 50%; mix-blend-mode: screen;
+  background: radial-gradient(ellipse at center, rgba(244,214,140,.55), rgba(180,156,255,.25) 40%, transparent 70%); opacity: .55; transition: opacity .6s, transform .6s; }
+.art-floor-burst { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+.art-candle { mix-blend-mode: soft-light; background: radial-gradient(ellipse at 20% 60%, rgba(255,170,80,.35), transparent 45%), radial-gradient(ellipse at 80% 60%, rgba(255,170,80,.35), transparent 45%); }
+.art-orb { width: 46px; height: 46px; margin: -23px; border-radius: 50%; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255,246,220,.95), rgba(180,156,255,.55) 35%, transparent 70%); }
+.art-mist { background: linear-gradient(to top, rgba(200,200,230,.18), transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .art-candle { animation: art-flicker 3.2s infinite; }
+  .art-orb { animation: art-orb 2.8s ease-in-out infinite; }
+  .art-breathe { animation: art-breathe 5s ease-in-out infinite; transform-origin: 50% 100%; }
+  .art-floor { animation: art-floor 4s ease-in-out infinite; }
+  .art-floor-burst { animation: none; }
+  .art-mist { animation: art-mist 12s ease-in-out infinite alternate; }
+  @keyframes art-flicker { 0%,100% { opacity: .8 } 20% { opacity: 1 } 35% { opacity: .7 } 60% { opacity: .95 } 80% { opacity: .75 } }
+  @keyframes art-orb { 0%,100% { transform: scale(.85); opacity: .75 } 50% { transform: scale(1.15); opacity: 1 } }
+  @keyframes art-breathe { 0%,100% { transform: translateY(0) scaleY(1) } 50% { transform: translateY(-2px) scaleY(1.006) } }
+  @keyframes art-floor { 0%,100% { opacity: .45 } 50% { opacity: .65 } }
+  @keyframes art-mist { from { transform: translateX(-4%) } to { transform: translateX(4%) } }
+}
