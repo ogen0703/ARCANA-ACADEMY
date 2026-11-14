@@ -2,6 +2,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "inbox/**"
+      - "tools/**"
   workflow_dispatch:
 permissions:
   contents: read

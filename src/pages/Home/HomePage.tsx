@@ -18,7 +18,7 @@ function timeOfDay() {
 }
 
 export default function HomePage() {
-  const { character: ch, experiences } = useGame();
+  const { character: ch, experiences, inbox } = useGame();
   if (!ch) return null;
   const prog = levelProgress(ch);
   const lastApplied = experiences.find((e) => e.analysisStatus === "applied");
@@ -60,6 +60,7 @@ export default function HomePage() {
               </ul>
             </div>
           ) : <p className="text-sm text-arcane-300">まだ成長の記録がありません。現実で経験したことを登録すると、魔法使いが成長します。</p>}
+          {!!inbox?.added && <p className="mt-3 rounded-xl bg-arcane-500/15 px-3 py-2 text-sm text-arcane-300">✉ 第2の脳から新しい経験が {inbox.added} 件届いた</p>}
           {waiting > 0 && <Link to="/experience" className="mt-3 block rounded-xl bg-candle/10 px-3 py-2 text-sm text-candle">承認まちの成長が {waiting} 件あります →</Link>}
         </Panel>
 

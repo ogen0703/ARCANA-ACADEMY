@@ -20,3 +20,8 @@
 2. 分析サービスが proposedGrowth を作る(proposed)
 3. プレイヤーが承認 → ルールエンジンが finalizeStats で確定 → キャラクターに反映、StatHistory に記録、approvedGrowth と appliedAt を保存(applied)
 4. 同じ経験は appliedEventIds と analysisStatus の両方で二重反映を防ぐ。反映済みの経験は変更・削除できない(記録を消さない)
+
+## 自動受け取り(受け取り箱)
+- 置き場所:リポジトリの inbox/(index.json と YYYYMMDD.enc.json)。アプリは raw.githubusercontent.com から読む
+- 中身は合言葉で暗号化(src/services/inbox/crypto.ts と tools/arcana_encrypt.py が同じ形式)。合言葉は端末の meta に保存し、書き出しファイルには入れない
+- 読んだファイル名は meta.inboxDone に記録し、2回読まない。経験の重複は sourceRef でも防ぐ

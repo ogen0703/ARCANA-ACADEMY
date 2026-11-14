@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "../../stores/game";
 import { deleteAllData, exportAll, importAll } from "../../services/storage/repo";
 import { db } from "../../services/storage/db";
@@ -6,6 +6,7 @@ import { PlayerProfileSchema } from "../../schemas";
 import { analyzer } from "../../services/ai";
 import { nowIso } from "../../utils/id";
 import { Panel } from "../../components/ui";
+import { getInboxSettings, setInboxPass } from "../../services/inbox";
 
 function download(name: string, data: unknown) {
   const a = document.createElement("a");
@@ -15,7 +16,11 @@ function download(name: string, data: unknown) {
 const stamp = () => new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
 export default function SettingsPage() {
-  const { player, experiences, history, run } = useGame();
+  const { player, experiences, history, run, inbox, inboxBusy, pullInbox } = useGame();
+  const [pass, setPass] = useState("");
+  const [inboxInfo, setInboxInfo] = useState<{ set: boolean; last: string | null; files: number }>({ set: false, last: null, files: 0 });
+  const refreshInbox = async () => { const s = await getInboxSettings(); setInboxInfo({ set: !!s.pass, last: s.lastCheck, files: s.done.length }); };
+  useEffect(() => { refreshInbox(); }, [inbox]);
   const [msg, setMsg] = useState("");
   const [pending, setPending] = useState<unknown>(null);
   const [delText, setDelText] = useState("");
@@ -33,6 +38,20 @@ export default function SettingsPage() {
           <label className="flex items-center gap-2"><input id="pl-photo" type="checkbox" checked={player.photoConsent} onChange={(e) => savePlayer({ photoConsent: e.target.checked })} />本人の写真を外見づくりに使ってよい(使うのは Phase 5 以降)</label>
           <label className="flex items-center gap-2"><input id="pl-ai" type="checkbox" checked={player.aiSendConsent} onChange={(e) => savePlayer({ aiSendConsent: e.target.checked })} />外部AIへの送信を許可する(Phase 3。送る前に毎回確認します)</label>
         </div>
+      </Panel>
+
+      <Panel title="自動受け取り(第2の脳から)">
+        <p className="text-sm text-arcane-300">毎日のタスクが、第2の脳の記録から経験を拾って合言葉で暗号化し、受け取り箱に置きます。アプリを開くと自動で読み込み、「承認まち」に入ります(反映は承認してから)。中身は合言葉がないと読めません。</p>
+        <form className="mt-3 flex flex-wrap gap-2" onSubmit={async (e) => { e.preventDefault(); await setInboxPass(pass); setPass(""); await refreshInbox(); const r = await pullInbox(); setMsg(r.error ?? `受け取り箱を確認した:新しい経験 ${r.added}件`); }}>
+          <input id="inbox-pass" className="field min-w-0 flex-1" type="password" autoComplete="off" placeholder={inboxInfo.set ? "設定済み(変えるときだけ入力)" : "合言葉を入力"} value={pass} onChange={(e) => setPass(e.target.value)} />
+          <button className="btn btn-primary" disabled={!pass.trim()}>保存</button>
+        </form>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className={inboxInfo.set ? "text-gold-200" : "text-arcane-300"}>{inboxInfo.set ? "合言葉:設定済み" : "合言葉:未設定"}</span>
+          <span className="text-arcane-300/70 text-xs">{inboxInfo.last ? `最後の確認 ${new Date(inboxInfo.last).toLocaleString("ja-JP")}・受け取ったファイル ${inboxInfo.files}件` : ""}</span>
+          <button className="btn ml-auto px-3 py-1 text-xs" disabled={!inboxInfo.set || inboxBusy} onClick={async () => { const r = await pullInbox(); setMsg(r.error ?? `受け取り箱を確認した:新しい経験 ${r.added}件`); }}>{inboxBusy ? "確認中…" : "今すぐ確認"}</button>
+        </div>
+        {inbox?.error && inboxInfo.set && <p className="mt-1 text-sm text-candle">{inbox.error}</p>}
       </Panel>
 
       <Panel title="使っているデータ">

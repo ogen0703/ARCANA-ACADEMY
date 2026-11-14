@@ -16,8 +16,15 @@ const NAV = [
 ];
 
 export default function App() {
-  const { ready, error, load } = useGame();
-  useEffect(() => { load(); }, [load]);
+  const { ready, error, load, pullInbox } = useGame();
+  useEffect(() => { load().then(() => pullInbox()); }, [load, pullInbox]);
+  // アプリに戻ってきたときも確認する(30分に1回まで)
+  useEffect(() => {
+    let last = Date.now();
+    const onVis = () => { if (document.visibilityState === "visible" && Date.now() - last > 30 * 60 * 1000) { last = Date.now(); pullInbox(); } };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [pullInbox]);
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col" style={{ paddingTop: "env(safe-area-inset-top)", paddingLeft: "max(16px, env(safe-area-inset-left))", paddingRight: "max(16px, env(safe-area-inset-right))" }}>
       <header className="flex items-center justify-between py-4">
