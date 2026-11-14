@@ -83,3 +83,18 @@ describe("データ構造の移行(v2→v3)", () => {
     expect(ch.appliedEventIds).toEqual(["e1"]);
   });
 });
+
+import { takeLesson } from "./repo";
+describe("授業の保存", () => {
+  it("1日3コマまで。記録が残り、書き出しに入る", async () => {
+    await takeLesson("astral", 0, true); await takeLesson("astral", 1, false); await takeLesson("astral", 2, true);
+    await expect(takeLesson("astral", 3, true)).rejects.toThrow();
+    const ch = await getCh2();
+    expect(ch.learnedSpells).toContain("astral-1");
+    const dump = await exportAll();
+    expect(dump.lessonLog).toHaveLength(3);
+    const { listLessons } = await import("./repo");
+    expect((await listLessons())[0].unit).toBe(2); // 新しい順(at の索引が要る)
+    expect(dump.statHistory.some((h) => h.kind === "spell")).toBe(true);
+  });
+});

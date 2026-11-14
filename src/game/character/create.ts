@@ -17,5 +17,6 @@ export function createCharacter(name: string, now: string): Character {
     history: { origin: "未解明", house: null, wand: null, wizardAge: null },
     appliedEventIds: [],
     diagnosedAt: null,
+    academy: { proficiency: {}, units: {} },
   };
 }

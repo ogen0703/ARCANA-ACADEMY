@@ -9,6 +9,7 @@ import { useGame } from "../../stores/game";
 import { MAGIC_KEYS, MAGIC_LABELS, STAT_LABELS, type StatKey } from "../../schemas";
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { Panel } from "../../components/ui";
+import { spellById } from "../../game/academy/content";
 
 const TABS = [
   { id: "report", label: "成長レポート" },
@@ -122,8 +123,8 @@ function MagicBook() {
       <div className="rounded-xl bg-night-800/50 p-3">
         <p className="label mb-1">習得した魔法</p>
         {ch.learnedSpells.length
-          ? <ul className="flex flex-wrap gap-1.5">{ch.learnedSpells.map((s) => <li key={s} className="pill bg-gold-500/15 text-gold-200">{s}</li>)}</ul>
-          : <p className="text-sm text-arcane-300">まだ習得した魔法はない。魔法の習得は Phase 4 で始まります。</p>}
+          ? <ul className="flex flex-wrap gap-1.5">{ch.learnedSpells.map((s) => <li key={s} className="pill bg-gold-500/15 text-gold-200">{spellById(s)?.name ?? s}</li>)}</ul>
+          : <p className="text-sm text-arcane-300">まだ覚えた呪文はない。講義棟の授業で覚えられる。</p>}
       </div>
     </div>
   );

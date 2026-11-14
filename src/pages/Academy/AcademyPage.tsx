@@ -42,7 +42,8 @@ export default function AcademyPage() {
         </ul>
       </Panel>
       <Panel title="学院の中で">
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Link to="/lessons" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">講義棟 ・ 授業</p><p className="text-xs text-arcane-300">6つの講座で呪文を覚える(1日3コマ)</p></Link>
           <Link to="/character" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">キャラクター</p><p className="text-xs text-arcane-300">能力・性格・成長の記録</p></Link>
           <Link to="/magic" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">魔法</p><p className="text-xs text-arcane-300">6つの魔法系統と適性</p></Link>
           <Link to="/settings" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">設定</p><p className="text-xs text-arcane-300">自動受け取り・データの保存</p></Link>

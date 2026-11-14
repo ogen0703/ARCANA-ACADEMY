@@ -2,6 +2,9 @@ import { CATEGORY_KEYS, CharacterSchema, ExperienceEventSchema, ExportSchema, Im
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { createCharacter, createPlayer } from "../../game/character/create";
 import { applyGrowth } from "../../game/growth/engine";
+import { applyLesson, learnSpells } from "../../game/academy/engine";
+import type { MagicKey } from "../../schemas";
+import { todayLocal } from "../../utils/id";
 import { applyDiagnosis, diagnose } from "../../game/growth/formation";
 import { migrateCharacterV3 } from "./migrations";
 import type { AiInsight } from "../../schemas";
@@ -24,6 +27,22 @@ export const getPlayer = async () => PlayerProfileSchema.parse(await db.player.g
 export const listExperiences = () => db.experiences.orderBy("createdAt").reverse().toArray();
 export const getExperience = (id: string) => db.experiences.get(id);
 export const listHistory = () => db.statHistory.orderBy("at").reverse().toArray();
+export const listLessons = () => db.lessonLog.orderBy("at").reverse().toArray();
+
+/** 授業を1コマ受ける(1日の上限は端末の日付で数える) */
+export async function takeLesson(course: MagicKey, unit: number, correct: boolean) {
+  return db.transaction("rw", [db.characters, db.statHistory, db.lessonLog], async () => {
+    const date = todayLocal();
+    const todayCount = await db.lessonLog.where("date").equals(date).count();
+    const ch = await getCharacter();
+    const id = newId(), now = nowIso();
+    const r = applyLesson(ch, { id, course, unit, correct, todayCount }, now, newId);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.statHistory.bulkPut(r.history);
+    await db.lessonLog.put({ id, at: now, date, course, unit, correct, prof: r.gain.prof, exp: r.gain.exp });
+    return r;
+  });
+}
 
 /** 小さな設定・メモ(成長レポートの講評など) */
 export const getMeta = async <T,>(key: string) => (await db.meta.get(key))?.value as T | undefined;
@@ -115,7 +134,10 @@ export async function approveExperience(id: string, growth?: Growth) {
     const g = growth ?? ev.proposedGrowth;
     if (!g) throw new Error("成長の提案がまだありません");
     const now = nowIso();
-    const { character, history } = applyGrowth(ch, ev, g, now, newId);
+    const applied = applyGrowth(ch, ev, g, now, newId);
+    const history = applied.history;
+    // 現実の成長で呪文の条件(能力値・兆し)を満たすこともある
+    const { character } = learnSpells(applied.character, ev.id, now, newId, history);
     const approved: Growth = { ...g, stats: Object.fromEntries(history.filter((h) => h.kind === "stat").map((h) => [h.key, Math.round((h.after - h.before) * 10) / 10])) };
     await db.characters.put(CharacterSchema.parse(character));
     await db.statHistory.bulkPut(history);
@@ -141,7 +163,7 @@ export async function exportAll(): Promise<ExportData> {
   return ExportSchema.parse({
     app: "arcana-academy", schemaVersion: SCHEMA_VERSION, exportedAt: nowIso(),
     player: (await db.player.get("player")) ?? null, character: (await db.characters.get("hero")) ?? null,
-    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(),
+    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(),
   });
 }
 
@@ -150,21 +172,22 @@ export async function importAll(raw: unknown) {
   const data = ExportSchema.parse(raw);
   if (data.schemaVersion > SCHEMA_VERSION) throw new Error("新しいバージョンのデータです。アプリを更新してから読み込んでください");
   const backup = await exportAll();
-  await db.transaction("rw", db.player, db.characters, db.experiences, db.statHistory, async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear()]);
     if (data.player) await db.player.put(data.player);
     // 古い形のデータは今の形に直してから入れる
     if (data.character) await db.characters.put(data.schemaVersion < 3 ? migrateCharacterV3(data.character, data.experiences) : data.character);
     await db.experiences.bulkPut(data.experiences);
     await db.statHistory.bulkPut(data.statHistory);
+    await db.lessonLog.bulkPut(data.lessonLog);
   });
   await ensureInitialized();
   return backup;
 }
 
 export async function deleteAllData() {
-  await  db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear()]);
   });
   await ensureInitialized();
 }

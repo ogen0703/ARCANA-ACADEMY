@@ -96,16 +96,18 @@ export function applyGrowth(ch: Character, ev: ExperienceEvent, growth: Growth, 
     const signals = round1(cur.signals + v);
     magicAffinity[k] = { ...cur, signals, value: affinityValue(cur.base, signals) };
   }
-  // 経験値とレベル
+  const leveled = addExp({ ...ch, basicStats: stats, personality, magicAffinity }, growth.exp, ev.id, now, newId, history);
+  return { character: { ...leveled, updatedAt: now, appliedEventIds: [...ch.appliedEventIds, ev.id] }, history };
+}
+
+/** 経験値を足してレベルを上げる(現実の経験・授業の共通の通り道) */
+export function addExp<C extends Pick<Character, "experience" | "level">>(ch: C, gain: number, eventId: string, now: string, newId: () => string, history: StatHistory[]): C {
   const expBefore = ch.experience, levelBefore = ch.level;
-  let exp = ch.experience + Math.max(0, Math.round(growth.exp)), level = ch.level;
-  history.push({ id: newId(), at: now, eventId: ev.id, kind: "exp", key: "experience", before: expBefore, after: exp });
+  const exp = ch.experience + Math.max(0, Math.round(gain)); let level = ch.level;
+  history.push({ id: newId(), at: now, eventId, kind: "exp", key: "experience", before: expBefore, after: exp });
   while (exp >= totalExpForLevel(level + 1)) level++;
-  if (level !== levelBefore) history.push({ id: newId(), at: now, eventId: ev.id, kind: "level", key: "level", before: levelBefore, after: level });
-  return {
-    character: { ...ch, basicStats: stats, personality, magicAffinity, experience: exp, level, updatedAt: now, appliedEventIds: [...ch.appliedEventIds, ev.id] },
-    history,
-  };
+  if (level !== levelBefore) history.push({ id: newId(), at: now, eventId, kind: "level", key: "level", before: levelBefore, after: level });
+  return { ...ch, experience: exp, level };
 }
 
 /** レベルLに到達するのに必要な累計経験値 */

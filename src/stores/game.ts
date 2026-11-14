@@ -1,15 +1,18 @@
 import { create } from "zustand";
-import type { Character, ExperienceEvent, PlayerProfile, StatHistory } from "../schemas";
+import type { Character, ExperienceEvent, LessonLog, MagicKey, PlayerProfile, StatHistory } from "../schemas";
+import { spellById } from "../game/academy/content";
 
 /** 承認・レベルアップの演出(表示だけ。数値は rule engine が決める) */
-export type Effect = { id: number; kind: "growth" | "level"; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
+export type Effect = { id: number; kind: "growth" | "level" | "spell"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
 import * as repo from "../services/storage/repo";
 import { checkInbox, type InboxResult } from "../services/inbox";
 
 type State = {
   ready: boolean; error: string | null;
   character: Character | null; player: PlayerProfile | null;
-  experiences: ExperienceEvent[]; history: StatHistory[];
+  experiences: ExperienceEvent[]; history: StatHistory[]; lessons: LessonLog[];
+  /** 授業を1コマ受ける。新しい呪文を覚えたら演出を出す */
+  lesson: (course: MagicKey, unit: number, correct: boolean) => Promise<{ prof: number; exp: number; repeat: boolean; learned: string[] }>;
   load: () => Promise<void>;
   run: <T>(fn: () => Promise<T>) => Promise<T>;
   inbox: InboxResult | null; inboxBusy: boolean;
@@ -21,12 +24,12 @@ type State = {
 };
 
 export const useGame = create<State>((set, get) => ({
-  ready: false, error: null, character: null, player: null, experiences: [], history: [],
+  ready: false, error: null, character: null, player: null, experiences: [], history: [], lessons: [],
   load: async () => {
     try {
       await repo.ensureInitialized();
-      const [character, player, experiences, history] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory()]);
-      set({ ready: true, error: null, character, player, experiences, history });
+      const [character, player, experiences, history, lessons] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons()]);
+      set({ ready: true, error: null, character, player, experiences, history, lessons });
     } catch (e) { set({ ready: true, error: e instanceof Error ? e.message : "読み込めませんでした" }); }
   },
   /** 保存処理を実行して、画面のデータを読み直す */
@@ -48,12 +51,24 @@ export const useGame = create<State>((set, get) => ({
     const after = get().character;
     if (ok && before && after) {
       const lv = after.level > before.level;
-      set({ burst: get().burst + 1, effect: { id: Date.now(), kind: lv ? "level" : "growth", title: ok > 1 ? `${ok}件の経験` : title, stats, exp, levelFrom: before.level, levelTo: after.level } });
+      const newSpells = after.learnedSpells.filter((x) => !before.learnedSpells.includes(x)).map((x) => spellById(x)?.name ?? x);
+      set({ burst: get().burst + 1, effect: { id: Date.now(), kind: lv ? "level" : "growth", spells: newSpells, title: ok > 1 ? `${ok}件の経験` : title, stats, exp, levelFrom: before.level, levelTo: after.level } });
     }
     if (!ok && firstErr) throw firstErr;
     return ok;
   },
   clearEffect: () => set({ effect: null }),
+  lesson: async (course, unit, correct) => {
+    const before = get().character;
+    const r = await repo.takeLesson(course, unit, correct);
+    await get().load();
+    const after = get().character;
+    const names = r.learned.map((s) => s.name);
+    if (names.length || (before && after && after.level > before.level)) {
+      set({ burst: get().burst + 1, effect: { id: Date.now(), kind: names.length ? "spell" : "level", spells: names, title: names.length ? `新しい呪文「${names.join("」「")}」` : "授業", stats: {}, exp: r.gain.exp, levelFrom: before?.level ?? 1, levelTo: after?.level ?? 1 } });
+    }
+    return { prof: r.gain.prof, exp: r.gain.exp, repeat: r.gain.repeat, learned: names };
+  },
   /** 受け取り箱を確認して、届いた経験を「承認まち」に入れる */
   pullInbox: async () => {
     set({ inboxBusy: true });

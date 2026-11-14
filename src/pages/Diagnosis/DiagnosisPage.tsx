@@ -5,6 +5,7 @@ import { diagnoseHero } from "../../services/storage/repo";
 import { DIAGNOSIS, diagnose } from "../../game/growth/formation";
 import { MAGIC_KEYS, MAGIC_LABELS, type MagicKey } from "../../schemas";
 import { Bar, MagicCircle, Panel } from "../../components/ui";
+import { houseFor } from "../../game/academy/content";
 
 /** 入学診断(GDD 4章:魔法適性は初期診断で判定)。1回だけ受けられる */
 export default function DiagnosisPage() {
@@ -16,7 +17,7 @@ export default function DiagnosisPage() {
   if (ch.diagnosedAt) {
     return (
       <Panel title="入学診断">
-        <p className="text-sm text-arcane-300">入学診断は {ch.diagnosedAt.slice(0, 10)} に受けました。魔法適性は、これからの経験で少しずつ育っていきます。</p>
+        <p className="text-sm text-arcane-300">入学診断は {new Date(ch.diagnosedAt).toLocaleDateString("ja-JP")} に受けました。所属寮は「{ch.history.house ?? "未定"}」。魔法適性は、これからの経験で少しずつ育っていきます。</p>
         <Link to="/magic" className="btn btn-primary mt-3 inline-block">魔法適性を見る</Link>
       </Panel>
     );
@@ -48,6 +49,7 @@ export default function DiagnosisPage() {
               <p className="relative text-center font-serif text-lg text-gold-200">{MAGIC_LABELS[ranked[0]].name}</p>
             </div>
             <p className="mt-2 text-center text-sm text-arcane-300">いちばん強い適性は「{MAGIC_LABELS[ranked[0]].name}」({MAGIC_LABELS[ranked[0]].desc})</p>
+            <p className="mt-1 text-center text-sm">入る寮:<span className="font-serif text-gold-200" data-testid="house">{houseFor(result!).name}</span><span className="text-xs text-arcane-300">({houseFor(result!).value})</span></p>
             <ul className="mt-4 space-y-2">
               {ranked.map((k: MagicKey) => (
                 <li key={k}>

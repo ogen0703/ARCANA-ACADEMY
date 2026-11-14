@@ -79,6 +79,11 @@ export const CharacterSchema = z.object({
   appliedEventIds: z.array(z.string()),
   /** 入学診断をした日時(1回だけ) */
   diagnosedAt: iso.nullable().default(null),
+  /** 学院生活(Phase 4a):講座ごとの熟練度と、単元ごとの受講回数 */
+  academy: z.object({
+    proficiency: z.record(z.enum(MAGIC_KEYS), z.number().min(0).max(100)).default({}),
+    units: z.record(z.enum(MAGIC_KEYS), z.array(z.number().int().min(0))).default({}),
+  }).default({ proficiency: {}, units: {} }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -139,12 +144,25 @@ export const StatHistorySchema = z.object({
   id: z.string(),
   at: iso,
   eventId: z.string(),
-  kind: z.enum(["stat", "exp", "level"]),
+  kind: z.enum(["stat", "exp", "level", "spell"]),
   key: z.string(),
   before: z.number(),
   after: z.number(),
 });
 export type StatHistory = z.infer<typeof StatHistorySchema>;
+
+/* ---------- 授業の記録(Phase 4a) ---------- */
+export const LessonLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  course: z.enum(MAGIC_KEYS),
+  unit: z.number().int().min(0),
+  correct: z.boolean(),
+  prof: z.number(),
+  exp: z.number().int().min(0),
+});
+export type LessonLog = z.infer<typeof LessonLogSchema>;
 
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
@@ -155,6 +173,7 @@ export const ExportSchema = z.object({
   character: CharacterSchema.nullable(),
   experiences: z.array(ExperienceEventSchema),
   statHistory: z.array(StatHistorySchema),
+  lessonLog: z.array(LessonLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 

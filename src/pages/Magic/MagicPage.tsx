@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { MAGIC_KEYS, MAGIC_LABELS } from "../../schemas";
 import { Bar, Panel } from "../../components/ui";
-
-const CONDITIONS = ["授業の受講", "魔法研究", "探索での発見", "魔法生物との交流", "特定の経験", "物語上の選択", "能力値の条件達成"];
+import { SPELLS, TIER_LABELS } from "../../game/academy/content";
+import { spellConditions } from "../../game/academy/engine";
+import { MAGIC_LABELS as ML } from "../../schemas";
 
 export default function MagicPage() {
   const { character: ch } = useGame();
@@ -28,11 +29,26 @@ export default function MagicPage() {
         <p className="mt-3 text-xs text-arcane-300/70">複数の系統を組み合わせた複合魔法は Phase 5 で登場します。</p>
       </Panel>
       <div className="grid content-start gap-4">
-        <Panel title="習得した魔法">
-          {ch.learnedSpells.length ? <ul>{ch.learnedSpells.map((s) => <li key={s}>{s}</li>)}</ul> : <p className="text-sm text-arcane-300">まだありません。魔法の授業や研究は Phase 4 で始まります。</p>}
-        </Panel>
-        <Panel title="魔法を覚える方法">
-          <ul className="grid gap-1 text-sm">{CONDITIONS.map((c) => <li key={c} className="flex gap-2"><span className="text-gold-400">✧</span>{c}</li>)}</ul>
+        <Panel title="呪文" right={<span className="num text-xs text-gold-200">{ch.learnedSpells.length} / {SPELLS.length}</span>}>
+          <p className="mb-2 text-xs text-arcane-300">授業の熟練度に、中級からは現実の成長(能力値と兆し)も必要。<Link to="/lessons" className="text-candle">授業へ</Link></p>
+          <ul className="grid gap-1.5" data-testid="spell-list">
+            {SPELLS.map((sp) => {
+              const learned = ch.learnedSpells.includes(sp.id), st = spellConditions(ch, sp);
+              return (
+                <li key={sp.id} data-spell={sp.id} data-learned={learned}>
+                  <details className={`rounded-lg px-2 py-1.5 ${learned ? "bg-gold-500/15" : "bg-night-800/50"}`}>
+                    <summary className="flex cursor-pointer items-center gap-2 text-sm">
+                      <span className={learned ? "text-gold-300" : "text-arcane-300/40"}>{learned ? "✧" : "○"}</span>
+                      <span className={learned ? "text-gold-200" : ""}>{sp.name}</span>
+                      <span className="ml-auto text-[10px] text-arcane-300">{ML[sp.system].name} ・ {TIER_LABELS[sp.tier]}</span>
+                    </summary>
+                    <p className="mt-1 text-xs">{sp.effect}<span className="text-arcane-300/70">(使いどころ:{sp.use})</span></p>
+                    {!learned && <ul className="mt-1 space-y-0.5 text-[11px]">{st.conds.map((c) => <li key={c.label} className={c.met ? "text-gold-200" : "text-arcane-300"}>{c.met ? "✓" : "・"} {c.label}(いま {c.now})</li>)}</ul>}
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
         </Panel>
       </div>
     </div>

@@ -47,6 +47,16 @@ export const P = {
   affinityScale: 20,
   diagnosisMin: 20, // 入学診断の基礎値:いちばん強い系統が 70、ほかは割合で 20〜70
   diagnosisRange: 50,
+  // ---- Phase 4a 授業と魔法(世界設定書で承認)----
+  lessonsPerDay: 3, // 全講座あわせて1日3コマ
+  lessonProf: 10, // 1コマの熟練度
+  lessonProfCorrect: 5, // 確認の問いに正解
+  lessonRepeatFactor: 0.5, // 同じ単元の2回目以降
+  lessonExp: 5,
+  lessonExpCorrect: 3,
+  spellBasicProf: 30, // 初級:熟練度30(単元3まで)
+  spellMidProf: 60, spellMidStat: 25, spellMidSignals: 5, // 中級:熟練度60(単元5まで)+能力値25+兆し5
+  spellAdvProf: 100, spellAdvStat: 45, spellAdvAffinity: 60, // 上級:熟練度100+能力値45+適性60
 };
 
 /** 次のレベルまでに必要な経験値(レベルLからL+1) */

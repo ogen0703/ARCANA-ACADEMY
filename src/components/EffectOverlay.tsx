@@ -8,7 +8,7 @@ export default function EffectOverlay() {
   const { effect, clearEffect } = useGame();
   useEffect(() => {
     if (!effect) return;
-    const t = setTimeout(clearEffect, effect.kind === "level" ? 4200 : 2800);
+    const t = setTimeout(clearEffect, effect.kind === "growth" ? 2800 : 4200);
     return () => clearTimeout(t);
   }, [effect, clearEffect]);
   if (!effect) return null;
@@ -21,7 +21,13 @@ export default function EffectOverlay() {
           {Array.from({ length: 14 }, (_, i) => <span key={i} style={{ ["--a" as string]: `${(i / 14) * 360}deg`, animationDelay: `${(i % 4) * 0.06}s` }} />)}
         </div>
         <div className="fx-text relative px-6">
-          {lv ? (
+          {effect.kind === "spell" ? (
+            <>
+              <p className="font-display text-sm tracking-[0.4em] text-gold-300">NEW SPELL</p>
+              <p className="font-serif text-3xl text-gold-200 drop-shadow-[0_0_18px_rgba(244,214,140,0.7)]">{effect.spells?.join(" ・ ")}</p>
+              <p className="mt-1 text-sm text-arcane-300">新しい呪文を覚えた</p>
+            </>
+          ) : lv ? (
             <>
               <p className="font-display text-sm tracking-[0.4em] text-gold-300">LEVEL UP</p>
               <p className="num font-display text-6xl text-gold-200 drop-shadow-[0_0_18px_rgba(244,214,140,0.7)]">Lv.{effect.levelTo}</p>
@@ -30,7 +36,8 @@ export default function EffectOverlay() {
           ) : (
             <p className="font-serif text-2xl text-gold-200">成長が刻まれた</p>
           )}
-          <p className="mt-2 max-w-[18em] truncate text-sm text-[#e9e4f7]">{effect.title}</p>
+          {effect.kind !== "spell" && <p className="mt-2 max-w-[18em] truncate text-sm text-[#e9e4f7]">{effect.title}</p>}
+          {effect.kind !== "spell" && !!effect.spells?.length && <p className="mt-2 text-sm text-gold-200">✧ 新しい呪文「{effect.spells.join("」「")}」を覚えた</p>}
           <ul className="mt-2 flex max-w-[20em] flex-wrap justify-center gap-1.5">
             {Object.entries(effect.stats).filter(([, v]) => v > 0).map(([k, v]) => <li key={k} className="pill num bg-gold-500/20 text-gold-200">{STAT_LABELS[k as StatKey]?.name ?? k} +{v}</li>)}
             <li className="pill num bg-arcane-500/25 text-arcane-300">EXP +{effect.exp}</li>

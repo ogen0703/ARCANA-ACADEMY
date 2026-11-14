@@ -3,6 +3,7 @@
  */
 import { MAGIC_KEYS, type Character, type MagicKey } from "../../schemas";
 import { P } from "./rules";
+import { houseFor } from "../academy/content";
 
 /** 性格の値。根拠の経験が足りないあいだは null(1回の行動で決めない) */
 export function personalityValue(evidence: number, weight: number): number | null {
@@ -53,5 +54,6 @@ export function applyDiagnosis(ch: Character, bases: Record<MagicKey, number>, n
   if (ch.diagnosedAt) throw new Error("入学診断はすでに受けています");
   const magicAffinity = { ...ch.magicAffinity };
   for (const k of MAGIC_KEYS) magicAffinity[k] = { ...magicAffinity[k], base: bases[k], value: affinityValue(bases[k], magicAffinity[k].signals) };
-  return { ...ch, magicAffinity, diagnosedAt: now, updatedAt: now };
+  // 寮も入学診断で決まる(GDD 4章)
+  return { ...ch, magicAffinity, diagnosedAt: now, updatedAt: now, history: { ...ch.history, house: houseFor(bases).name } };
 }

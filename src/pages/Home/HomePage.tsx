@@ -9,9 +9,9 @@ import { ambienceOf } from "../../game/world/ambience";
 
 const SHORTCUTS = [
   { to: "/academy", name: "学院", desc: "8つの施設と世界" },
-  { to: "/encyclopedia", name: "図鑑", desc: "成長年表・魔法図鑑" },
-  { to: "/character", name: "キャラクター", desc: "能力・性格・成長の記録" },
-  { to: "/magic", name: "魔法", desc: "6つの魔法系統と適性" },
+  { to: "/lessons", name: "授業", desc: "講座を受けて呪文を覚える" },
+  { to: "/magic", name: "魔法", desc: "適性と覚えた呪文" },
+  { to: "/encyclopedia", name: "図鑑", desc: "成長レポート・年表" },
 ];
 
 export default function HomePage() {
