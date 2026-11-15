@@ -71,6 +71,7 @@ try {
   await s2(p, `ch.world.discoveries = [...ch.world.discoveries, "d-logbook"]`);
   await p.goto(B + "/story"); await p.reload();
   await p.getByTestId("scene").getByText("第4場 ・ 百年前の夜").waitFor();
+  await p.waitForTimeout(600); await p.screenshot({ path: `${out}/ch2-seil.png` });
   await p.getByRole("button", { name: "受け入れる" }).click();
   await p.getByTestId("scene-reply").waitFor();
   // 第5場 → 課題(道A)
@@ -86,7 +87,7 @@ try {
   await p.getByTestId("scene").getByText("第6場 ・ 塔の最上階").waitFor();
   await p.getByTestId("read-on").click(); await p.getByText("つづきは明日").waitFor();
   await p.goto(B + "/arena"); await p.getByText("星喰いの影").first().waitFor();
-  await p.goto(B + "/arena/starhunger"); await p.getByText("星喰いの影").first().waitFor();
+  await p.goto(B + "/arena/starhunger"); await p.getByText("星喰いの影").first().waitFor(); await p.waitForTimeout(600);
   await p.screenshot({ path: `${out}/battle-starhunger.png` });
   // 勝った → 第7場 → 第8場で第2章完
   await s2(p, `ch.world.defeated = [...ch.world.defeated, "starhunger"]`);
