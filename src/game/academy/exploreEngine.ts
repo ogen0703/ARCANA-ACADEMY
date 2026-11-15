@@ -4,6 +4,7 @@ import { P } from "../growth/rules";
 import { addExp } from "../growth/engine";
 import { learnSpells, unitCounts } from "./engine";
 import { companionCanPass } from "./creaturesEngine";
+import { knows } from "./compound";
 import { creatureById } from "./creatures";
 import { DISCOVERIES, MATERIALS, PLACES, TEACHER_QUESTS, TITLES, WAND_WOOD, WEEKLY_QUESTS, materialById, placeById, type Place, type WeeklyQuest } from "./explore";
 
@@ -30,7 +31,7 @@ export function roomOptions(ch: Character, placeId: string, roomIdx: number) {
   const room = placeById(placeId)!.rooms[roomIdx];
   return {
     room,
-    spells: room.spells.map((id) => ({ id, method: `spell:${id}`, learned: ch.learnedSpells.includes(id) })),
+    spells: room.spells.map((id) => ({ id, method: `spell:${id}`, learned: knows(ch, id) })),
     alts: room.alts.map((label, i) => ({ label, method: `alt:${i}` })),
     canSkip: !!room.passWithout,
     companion: companionCanPass(ch, room.id) ? { method: `companion:${ch.world.companion}`, label: `相棒の${creatureById(ch.world.companion!)!.name}に${creatureById(ch.world.companion!)!.explore.label}` } : null,
@@ -51,7 +52,7 @@ export function applyExploration(ch: Character, input: { id: string; place: stri
     if (st.room !== room.id) throw new Error("部屋の順番が正しくありません");
     const [kind, arg] = st.method.split(":");
     let ok = false;
-    if (kind === "spell") { if (!room.spells.includes(arg) || !ch.learnedSpells.includes(arg)) throw new Error("その呪文は使えません"); ok = true; }
+    if (kind === "spell") { if (!room.spells.includes(arg) || !knows(ch, arg)) throw new Error("その呪文は使えません"); ok = true; }
     else if (kind === "alt") { if (!(Number(arg) >= 0 && Number(arg) < room.alts.length)) throw new Error("その方法は選べません"); ok = true; }
     else if (kind === "companion") { if (arg !== ch.world.companion || !companionCanPass(ch, room.id)) throw new Error("相棒はここでは手伝えない"); ok = true; }
     else if (kind === "skip") { if (!room.passWithout) throw new Error("この部屋は素通りできません"); }
@@ -92,12 +93,13 @@ export function wandFor(ch: Character) {
 export function canMakeWand(ch: Character) {
   if (ch.history.wand) return { ok: false, reason: "杖はもう持っている" };
   if (!ch.diagnosedAt) return { ok: false, reason: "先に入学診断を受けてね" };
-  if (qty(ch, "starshard") < 1) return { ok: false, reason: "廃神殿で「星の欠片」を見つけて持ち帰ろう" };
+  if (qty(ch, "starshard") < 1 && !knows(ch, "c-sapling")) return { ok: false, reason: "廃神殿で「星の欠片」を見つけて持ち帰ろう" };
   return { ok: true, reason: "" };
 }
 export function makeWand(ch: Character, now: string): Character {
   const c = canMakeWand(ch); if (!c.ok) throw new Error(c.reason);
-  const inv = ch.inventory.map((i) => (i.id === "starshard" ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0);
+  // 若木の細工を覚えていれば星の欠片を使わない
+  const inv = knows(ch, "c-sapling") ? ch.inventory : ch.inventory.map((i) => (i.id === "starshard" ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0);
   return awardTitles({ ...ch, inventory: inv, history: { ...ch.history, wand: wandFor(ch) }, updatedAt: now }, now);
 }
 

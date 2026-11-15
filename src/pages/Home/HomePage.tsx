@@ -5,6 +5,7 @@ import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { STAT_LABELS, type StatKey } from "../../schemas";
 import { Bar, Panel } from "../../components/ui";
 import Academy3D from "../../components/three/Academy3D";
+import { rankOf as heroRank } from "../../game/growth/appearance";
 import { ambienceOf } from "../../game/world/ambience";
 import { rankOf } from "../../game/academy/battle";
 
@@ -37,7 +38,7 @@ export default function HomePage() {
           <h1 className="font-serif text-3xl text-gold-200">{ch.name}</h1>
           {ch.world.activeTitle && <p className="text-xs tracking-widest text-gold-300/90" data-testid="active-title">〈{ch.world.activeTitle}〉</p>}
           {rankOf(ch.world.defeated).id !== "novice" && <p className="text-[11px] text-arcane-300">演習ランク:{rankOf(ch.world.defeated).name}</p>}
-          <p className="text-sm text-arcane-300">見習い魔法使い ・ アルカナ学院</p>
+          <p className="text-sm text-arcane-300">{heroRank(ch).name}{heroRank(ch).index === 0 ? "魔法使い" : ""}{ch.history.house ? ` ・ ${ch.history.house}` : " ・ アルカナ学院"}</p>
           <div className="mt-4 w-full max-w-sm">
             <div className="mb-1 flex items-baseline justify-between">
               <span className="font-display text-gold-300">Lv. <span className="num text-2xl">{ch.level}</span></span>
@@ -45,7 +46,7 @@ export default function HomePage() {
             </div>
             <Bar value={prog.inLevel} max={prog.need} tone="arcane" />
           </div>
-          <p className="mt-3 text-[11px] text-arcane-300/50">主人公の姿は、経験とともに進化していく(Phase 5)</p>
+          <p className="mt-3 text-[11px] text-arcane-300/50">オーラはいちばん高い魔法適性の色。床の魔法陣は、呪文を覚えた系統ごとに輪が増える</p>
         </div>
       </section>
 

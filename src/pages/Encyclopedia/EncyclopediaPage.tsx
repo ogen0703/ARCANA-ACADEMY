@@ -10,6 +10,8 @@ import { MAGIC_KEYS, MAGIC_LABELS, STAT_LABELS, type StatKey } from "../../schem
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { Panel } from "../../components/ui";
 import { spellById } from "../../game/academy/content";
+import { COMPOUNDS } from "../../game/academy/compound";
+import { turningPoints } from "../../game/growth/personalityHistory";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
 import { CREATURES } from "../../game/academy/creatures";
@@ -83,6 +85,7 @@ function Timeline() {
   const applied = experiences.filter((e) => e.analysisStatus === "applied").sort((a, b) => a.date.localeCompare(b.date));
   if (!applied.length) return <p className="text-sm text-arcane-300">まだ記録がありません。経験を承認すると、月ごとの年表になって残ります(消えません)。</p>;
   const levels = history.filter((h) => h.kind === "level");
+  const turns = turningPoints(experiences);
   const lvByEvent = new Map(levels.map((h) => [h.eventId, h]));
   const months = new Map<string, typeof applied>();
   applied.forEach((e) => { const m = e.date.slice(0, 7); months.set(m, [...(months.get(m) ?? []), e]); });
@@ -104,6 +107,7 @@ function Timeline() {
               {lvs.map((h) => <span key={h!.id} className="pill num bg-arcane-500/25 text-arcane-300">Lv.{h!.before}→{h!.after}</span>)}
               {top.map(([k, v]) => <span key={k} className="pill num bg-gold-500/15 text-gold-200">{STAT_LABELS[k as StatKey].name} +{Math.round(v * 10) / 10}</span>)}
             </div>
+            {turns.filter((t) => t.date.startsWith(m)).map((t) => <p key={t.date + t.key} className="mt-1 text-xs text-gold-200" data-testid="timeline-turn">✧ 心の転機({t.date.slice(5).replace("-", "/")}):この1か月で{t.label}が +{t.diff}{t.events.length ? `。きっかけ:${t.events.map((e) => e.title).join("、")}` : ""}</p>)}
             <ul className="mt-2 space-y-0.5 text-sm">
               {evs.map((e) => <li key={e.id} className="flex gap-2"><span className="num shrink-0 text-xs text-arcane-300/70">{e.date.slice(5)}</span><span className="truncate">{e.title}</span><span className="ml-auto shrink-0 text-[11px] text-arcane-300/60">{CATEGORY_DEFS[e.category].label}</span></li>)}
             </ul>
@@ -133,6 +137,11 @@ function MagicBook() {
         {ch.learnedSpells.length
           ? <ul className="flex flex-wrap gap-1.5">{ch.learnedSpells.map((s) => <li key={s} className="pill bg-gold-500/15 text-gold-200">{spellById(s)?.name ?? s}</li>)}</ul>
           : <p className="text-sm text-arcane-300">まだ覚えた呪文はない。講義棟の授業で覚えられる。</p>}
+      </div>
+      <div className="rounded-xl bg-night-800/50 p-3" data-testid="compound-book">
+        <p className="label mb-1">複合魔法 <span className="num">{ch.world.compounds.length} / {COMPOUNDS.length}</span></p>
+        <ul className="flex flex-wrap gap-1.5">{COMPOUNDS.map((c) => <li key={c.id} className={`pill ${ch.world.compounds.includes(c.id) ? "bg-gold-500/15 text-gold-200" : "bg-night-900/60 text-arcane-300/50"}`}>{ch.world.compounds.includes(c.id) ? c.name : "?????"}</li>)}</ul>
+        <p className="mt-1 text-[11px] text-arcane-300/70">大図書館の奥の<Link to="/research" className="text-candle">魔法研究室</Link>で見つかる。</p>
       </div>
     </div>
   );

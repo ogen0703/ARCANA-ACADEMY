@@ -56,7 +56,14 @@ export const P = {
   lessonExpCorrect: 3,
   spellBasicProf: 30, // 初級:熟練度30(単元3まで)
   spellMidProf: 60, spellMidStat: 25, spellMidSignals: 5, // 中級:熟練度60(単元5まで)+能力値25+兆し5
-  spellAdvProf: 100, spellAdvStat: 45, spellAdvAffinity: 60, // 上級:熟練度100+能力値45+適性60
+  spellAdvProf: 100, spellAdvStat: 45, spellAdvAffinity: 60, // 上級:熟練度100+単元8+能力値45+適性60
+  // ---- Phase 5b 上級課程・複合魔法・見た目(世界設定書で承認)----
+  advancedProf: 60, advancedTrust: 40, // 上級課程(単元6〜8):単元5+熟練度60+先生の信頼40
+  lessonProfAdvanced: 12, lessonProfAdvancedCorrect: 6,
+  researchPerDay: 1, researchSteps: 3, researchStepsHouse: 2, researchAffinity: 35, researchProf: 3,
+  rankApprentice: { level: 1 }, rankMage: { level: 10, mid: 3 }, rankArchmage: { level: 20, adv: 2 },
+  auraSteps: [40, 60, 80], // オーラが強くなる適性
+  turningPoint: 5, turningDays: 30, // 30日で性格が5以上動いたら「心の転機」
   // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
   explorePerDay: 2,
   exploreExpPerRoom: 2, exploreExpMax: 10,

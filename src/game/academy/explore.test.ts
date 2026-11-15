@@ -1,3 +1,4 @@
+import { COMPOUNDS } from "./compound";
 import { describe, expect, it } from "vitest";
 import { applyExploration, canMakeWand, claimTeacherQuest, claimWeekly, makeWand, teacherQuestStatus, weekStart, weeklyProgress, weeklyQuestsFor, weeklyStreak } from "./exploreEngine";
 import { DISCOVERIES, PLACES, MATERIALS } from "./explore";
@@ -11,7 +12,7 @@ const go = (ch: Character, place: string, steps: [string, string][], todayCount 
 describe("探索の中身", () => {
   it("部屋の呪文・素材・発見の参照が正しい", () => {
     for (const p of PLACES) for (const r of p.rooms) {
-      r.spells.forEach((s) => expect(SPELLS.some((x) => x.id === s)).toBe(true));
+      r.spells.forEach((s) => expect(SPELLS.some((x) => x.id === s) || COMPOUNDS.some((x) => x.id === s)).toBe(true));
       r.items.forEach((i) => expect(MATERIALS.some((m) => m.id === i)).toBe(true));
       if (r.discovery) expect(DISCOVERIES.some((d) => d.id === r.discovery)).toBe(true);
       expect(r.spells.length + r.alts.length + (r.passWithout ? 1 : 0)).toBeGreaterThan(0);

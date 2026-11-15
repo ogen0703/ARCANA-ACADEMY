@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { COURSES, UNITS, spellById } from "../../game/academy/content";
-import { nextUnit, proficiencyOf, unitCounts, unitOpen } from "../../game/academy/engine";
+import { advancedConditions, isAdvancedUnit, nextUnit, proficiencyOf, unitCounts, unitOpen } from "../../game/academy/engine";
+import { ADVANCED_FROM } from "../../game/academy/content";
 import { P } from "../../game/growth/rules";
 import { MAGIC_KEYS, type MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -27,6 +28,7 @@ export default function LessonPage() {
   if (!(MAGIC_KEYS as readonly string[]).includes(course)) return <Panel title="授業"><p className="text-sm">その講座はありません。<Link to="/lessons" className="text-candle">講義棟へ</Link></p></Panel>;
   const k = course as MagicKey, c = COURSES[k], units = UNITS[k], counts = unitCounts(ch, k);
   const left = Math.max(0, P.lessonsPerDay - lessons.filter((l) => l.date === todayLocal()).length);
+  const adv = advancedConditions(ch, k);
 
   return (
     <div className="mx-auto grid max-w-2xl gap-4">
@@ -48,9 +50,15 @@ export default function LessonPage() {
               const open = unitOpen(ch, k, i), sp = u.spell ? spellById(u.spell) : null;
               return (
                 <li key={i}>
+                  {i === ADVANCED_FROM && (
+                    <div className="mb-2 mt-1 rounded-xl border border-gold-400/30 bg-gold-500/5 px-3 py-2" data-testid="advanced-head">
+                      <p className="font-serif text-gold-200">上級課程 {adv.ok ? "・ ひらいた" : "・ 🔒"}</p>
+                      {!adv.ok && <ul className="mt-1 grid gap-0.5 text-xs">{adv.conds.map((c) => <li key={c.label} className={c.met ? "text-gold-200" : "text-arcane-300"}>{c.met ? "✓" : "・"} {c.label}(いま {c.now})</li>)}</ul>}
+                    </div>
+                  )}
                   <button disabled={!open || left === 0} onClick={() => { setErr(""); setPick(null); setPh({ step: "lecture", unit: i }); }}
                     className={`w-full rounded-xl border px-3 py-2 text-left ${open ? "border-arcane-500/30 hover:border-gold-400 hover:bg-gold-500/10" : "border-arcane-500/10 opacity-50"} ${i === nextUnit(ch, k) ? "border-gold-400/70" : ""}`}>
-                    <span className="text-xs text-arcane-300">単元{i + 1}{counts[i] ? ` ・ 受講${counts[i]}回` : ""}{!open ? " ・ 🔒前の単元から" : ""}</span>
+                    <span className="text-xs text-arcane-300">単元{i + 1}{counts[i] ? ` ・ 受講${counts[i]}回` : ""}{!open ? (isAdvancedUnit(i) && !adv.ok ? " ・ 🔒上級課程の条件" : " ・ 🔒前の単元から") : ""}{isAdvancedUnit(i) && i === units.length - 1 ? " ・ 実技" : ""}</span>
                     <span className="block font-serif">{u.title}{sp && <span className="pill ml-2 bg-gold-500/15 text-[10px] text-gold-200">呪文の実習:{sp.name}</span>}</span>
                   </button>
                 </li>

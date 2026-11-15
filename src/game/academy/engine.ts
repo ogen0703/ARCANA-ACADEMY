@@ -4,8 +4,9 @@
 import { MAGIC_KEYS, STAT_LABELS, type Character, type MagicKey, type StatHistory } from "../../schemas";
 import { P } from "../growth/rules";
 import { addExp } from "../growth/engine";
-import { COURSES, SPELLS, UNITS, type Spell } from "./content";
-import { lessonTrustMult } from "./npcEngine";
+import { ADVANCED_FROM, COURSES, SPELLS, UNITS, type Spell } from "./content";
+import { lessonTrustMult, trustOf } from "./npcEngine";
+import { npcForCourse } from "./npc";
 export { houseFor } from "./content";
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -13,14 +14,25 @@ export const proficiencyOf = (ch: Character, k: MagicKey) => ch.academy.proficie
 export const unitCounts = (ch: Character, k: MagicKey) => UNITS[k].map((_, i) => ch.academy.units[k]?.[i] ?? 0);
 /** 次に受けられる単元(順番どおり。全部終わっていれば復習で好きな単元) */
 export const nextUnit = (ch: Character, k: MagicKey) => { const c = unitCounts(ch, k); const i = c.findIndex((n) => n === 0); return i === -1 ? null : i; };
-export const unitOpen = (ch: Character, k: MagicKey, i: number) => i === 0 || unitCounts(ch, k)[i - 1] > 0;
+/** 上級課程(単元6〜8)に進む条件:単元5 + 熟練度60 + 担当の先生の信頼40 */
+export function advancedConditions(ch: Character, k: MagicKey) {
+  const counts = unitCounts(ch, k), prof = proficiencyOf(ch, k), t = npcForCourse(k), trust = t ? trustOf(ch, t.id) : 0;
+  const conds = [
+    { label: "単元5を受講", met: counts[ADVANCED_FROM - 1] > 0, now: counts[ADVANCED_FROM - 1] > 0 ? "済" : "未" },
+    { label: `${COURSES[k].name}の熟練度 ${P.advancedProf}`, met: prof >= P.advancedProf, now: `${prof}` },
+    { label: `${COURSES[k].teacher.name}${COURSES[k].teacher.title}の信頼 ${P.advancedTrust}`, met: trust >= P.advancedTrust, now: `${trust}` },
+  ];
+  return { ok: conds.every((c) => c.met), conds };
+}
+export const isAdvancedUnit = (i: number) => i >= ADVANCED_FROM;
+export const unitOpen = (ch: Character, k: MagicKey, i: number) => i === 0 || (unitCounts(ch, k)[i - 1] > 0 && (!isAdvancedUnit(i) || advancedConditions(ch, k).ok));
 
 /** 1コマで得るもの */
 export function lessonGain(ch: Character, k: MagicKey, unit: number, correct: boolean) {
   const repeat = unitCounts(ch, k)[unit] > 0;
   const aff = ch.magicAffinity[k].value;
   const mult = (aff == null ? 1 : 0.8 + aff / 250) * (repeat ? P.lessonRepeatFactor : 1) * lessonTrustMult(ch, k);
-  const prof = r1(Math.min(100 - proficiencyOf(ch, k), (P.lessonProf + (correct ? P.lessonProfCorrect : 0)) * mult));
+  const prof = r1(Math.min(100 - proficiencyOf(ch, k), (isAdvancedUnit(unit) ? P.lessonProfAdvanced + (correct ? P.lessonProfAdvancedCorrect : 0) : P.lessonProf + (correct ? P.lessonProfCorrect : 0)) * mult));
   const exp = P.lessonExp + (correct ? P.lessonExpCorrect : 0);
   return { prof: Math.max(0, prof), exp, repeat, mult };
 }
@@ -40,9 +52,9 @@ export function spellConditions(ch: Character, sp: Spell) {
     conds.push({ label: `現実の経験からの兆し ${P.spellMidSignals}`, met: sig >= P.spellMidSignals, now: sig.toFixed(1) });
   } else {
     conds.push({ label: `${c.name}の熟練度 ${P.spellAdvProf}`, met: prof >= P.spellAdvProf, now: `${prof}` });
+    conds.push({ label: "単元8(実技)を受講", met: counts[7] > 0, now: counts[7] > 0 ? "済" : "未" });
     conds.push({ label: `${STAT_LABELS[c.stat].name} ${P.spellAdvStat}`, met: stat >= P.spellAdvStat, now: stat.toFixed(1) });
     conds.push({ label: `魔法適性 ${P.spellAdvAffinity}`, met: (aff ?? 0) >= P.spellAdvAffinity, now: aff == null ? "未診断" : `${aff}` });
-    conds.push({ label: "上級の授業(探索・戦闘と一緒に追加予定)", met: false, now: "準備中" });
   }
   return { ok: conds.every((x) => x.met), conds };
 }

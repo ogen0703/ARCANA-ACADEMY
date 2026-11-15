@@ -6,6 +6,7 @@ import { applyLesson, learnSpells } from "../../game/academy/engine";
 import { applyBattle, type Command } from "../../game/academy/battle";
 import { feed as feedCreature, play as playCreature, realBoost, setCompanion, visit as visitCreature } from "../../game/academy/creaturesEngine";
 import { gift as giftTo, receive as receiveFromNpc, talk as talkWith } from "../../game/academy/npcEngine";
+import { research as researchCompound } from "../../game/academy/compound";
 import { applyExploration, claimTeacherQuest, claimWeekly, makeWand, type Step } from "../../game/academy/exploreEngine";
 import type { MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -36,6 +37,19 @@ export const listExplorations = () => db.exploreLog.orderBy("at").reverse().toAr
 export const listBattles = () => db.battleLog.orderBy("at").reverse().toArray();
 export const listTalks = () => db.talkLog.orderBy("at").reverse().toArray();
 export const listSanctuary = () => db.sanctuaryLog.orderBy("at").reverse().toArray();
+
+export const listResearch = () => db.researchLog.orderBy("at").reverse().toArray();
+/** 魔法研究室で研究する(1日1回) */
+export async function doResearch(a: string, b: string) {
+  return db.transaction("rw", [db.characters, db.researchLog, db.statHistory], async () => {
+    const today = await db.researchLog.where("date").equals(todayLocal()).count(); const now = nowIso(); const id = newId();
+    const r = researchCompound(await getCharacter(), { id, a, b, todayCount: today }, now, newId);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.statHistory.bulkPut(r.history);
+    await db.researchLog.put({ id, at: now, date: todayLocal(), a, b, result: r.result.kind, compound: r.result.compound?.id ?? null });
+    return r.result;
+  });
+}
 
 const todaySanctuary = () => db.sanctuaryLog.where("date").equals(todayLocal()).toArray();
 /** 保護区を訪れる(1日3回) */
@@ -290,7 +304,7 @@ export async function exportAll(): Promise<ExportData> {
   return ExportSchema.parse({
     app: "arcana-academy", schemaVersion: SCHEMA_VERSION, exportedAt: nowIso(),
     player: (await db.player.get("player")) ?? null, character: (await db.characters.get("hero")) ?? null,
-    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(), exploreLog: await db.exploreLog.toArray(), battleLog: await db.battleLog.toArray(), talkLog: await db.talkLog.toArray(), sanctuaryLog: await db.sanctuaryLog.toArray(),
+    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(), exploreLog: await db.exploreLog.toArray(), battleLog: await db.battleLog.toArray(), talkLog: await db.talkLog.toArray(), sanctuaryLog: await db.sanctuaryLog.toArray(), researchLog: await db.researchLog.toArray(),
   });
 }
 
@@ -299,8 +313,8 @@ export async function importAll(raw: unknown) {
   const data = ExportSchema.parse(raw);
   if (data.schemaVersion > SCHEMA_VERSION) throw new Error("新しいバージョンのデータです。アプリを更新してから読み込んでください");
   const backup = await exportAll();
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog, db.sanctuaryLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear(), db.sanctuaryLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog, db.sanctuaryLog, db.researchLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear(), db.sanctuaryLog.clear(), db.researchLog.clear()]);
     if (data.player) await db.player.put(data.player);
     // 古い形のデータは今の形に直してから入れる
     if (data.character) await db.characters.put(data.schemaVersion < 3 ? migrateCharacterV3(data.character, data.experiences) : data.character);
@@ -311,14 +325,15 @@ export async function importAll(raw: unknown) {
     await db.battleLog.bulkPut(data.battleLog);
     await db.talkLog.bulkPut(data.talkLog);
     await db.sanctuaryLog.bulkPut(data.sanctuaryLog);
+    await db.researchLog.bulkPut(data.researchLog);
   });
   await ensureInitialized();
   return backup;
 }
 
 export async function deleteAllData() {
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog, db.sanctuaryLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear(), db.sanctuaryLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog, db.sanctuaryLog, db.researchLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear(), db.sanctuaryLog.clear(), db.researchLog.clear()]);
   });
   await ensureInitialized();
 }

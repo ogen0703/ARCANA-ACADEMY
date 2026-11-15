@@ -1,16 +1,16 @@
 import { create } from "zustand";
-import type { BattleLog, SanctuaryLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, MagicKey, PlayerProfile, StatHistory } from "../schemas";
+import type { BattleLog, SanctuaryLog, ResearchLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, MagicKey, PlayerProfile, StatHistory } from "../schemas";
 import { spellById } from "../game/academy/content";
 
 /** 承認・レベルアップの演出(表示だけ。数値は rule engine が決める) */
-export type Effect = { id: number; kind: "growth" | "level" | "spell"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
+export type Effect = { id: number; kind: "growth" | "level" | "spell" | "rank"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
 import * as repo from "../services/storage/repo";
 import { checkInbox, type InboxResult } from "../services/inbox";
 
 type State = {
   ready: boolean; error: string | null;
   character: Character | null; player: PlayerProfile | null;
-  experiences: ExperienceEvent[]; history: StatHistory[]; lessons: LessonLog[]; explorations: ExploreLog[]; battles: BattleLog[]; talks: TalkLog[]; sanctuary: SanctuaryLog[];
+  experiences: ExperienceEvent[]; history: StatHistory[]; lessons: LessonLog[]; explorations: ExploreLog[]; battles: BattleLog[]; talks: TalkLog[]; sanctuary: SanctuaryLog[]; research: ResearchLog[];
   /** 授業を1コマ受ける。新しい呪文を覚えたら演出を出す */
   lesson: (course: MagicKey, unit: number, correct: boolean) => Promise<{ prof: number; exp: number; repeat: boolean; learned: string[] }>;
   load: () => Promise<void>;
@@ -24,12 +24,12 @@ type State = {
 };
 
 export const useGame = create<State>((set, get) => ({
-  ready: false, error: null, character: null, player: null, experiences: [], history: [], lessons: [], explorations: [], battles: [], talks: [], sanctuary: [],
+  ready: false, error: null, character: null, player: null, experiences: [], history: [], lessons: [], explorations: [], battles: [], talks: [], sanctuary: [], research: [],
   load: async () => {
     try {
       await repo.ensureInitialized();
-      const [character, player, experiences, history, lessons, explorations, battles, talks, sanctuary] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks(), repo.listSanctuary()]);
-      set({ ready: true, error: null, character, player, experiences, history, lessons, explorations, battles, talks, sanctuary });
+      const [character, player, experiences, history, lessons, explorations, battles, talks, sanctuary, research] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks(), repo.listSanctuary(), repo.listResearch()]);
+      set({ ready: true, error: null, character, player, experiences, history, lessons, explorations, battles, talks, sanctuary, research });
     } catch (e) { set({ ready: true, error: e instanceof Error ? e.message : "読み込めませんでした" }); }
   },
   /** 保存処理を実行して、画面のデータを読み直す */

@@ -3,7 +3,8 @@
  * 純粋関数。基本ステータス・性格・魔法の兆しは変えない(読むだけ)。乱数は戦闘ごとの種から決まるので、同じコマンドなら同じ結果になる。
  */
 import type { Character, StatKey } from "../../schemas";
-import { COURSES, spellById } from "./content";
+import { COURSES } from "./content";
+import { magicName, magicSystem } from "./compound";
 import { proficiencyOf } from "./engine";
 import { companionSupport } from "./creaturesEngine";
 
@@ -22,7 +23,7 @@ export const FIRST_WIN_TITLE = "演習場の新人";
 export const BATTLE = { rewardsPerDay: 3, maxTurns: 10, mpRegen: 2, staff: 4, staffWand: 6, guardMp: 3, guardSp: 5, intimidateSp: 12, shieldBlock: 8, heavyMult: 2.5 };
 
 /** 呪文の戦闘での効果(設定書の表) */
-type SpellFx = { mp: number; kind: "attack" | "light" | "foresee" | "calm" | "resonate" | "shield" | "net" | "vines" | "heal" | "read" | "unseal"; power?: number; first?: boolean };
+type SpellFx = { mp: number; kind: "attack" | "light" | "foresee" | "calm" | "resonate" | "shield" | "net" | "vines" | "heal" | "read" | "unseal" | "aegis" | "manifest" | "mend" | "pierce" | "meditate"; power?: number; first?: boolean };
 export const SPELL_FX: Record<string, SpellFx> = {
   "elemental-1": { mp: 3, kind: "attack", power: 8 },
   "elemental-2": { mp: 6, kind: "attack", power: 14, first: true },
@@ -36,10 +37,20 @@ export const SPELL_FX: Record<string, SpellFx> = {
   "nature-2": { mp: 5, kind: "heal" },
   "ancient-1": { mp: 2, kind: "read" },
   "ancient-2": { mp: 5, kind: "unseal" },
+  // 上級呪文(Phase 5b)
+  "astral-3": { mp: 8, kind: "aegis" },
+  "creation-3": { mp: 10, kind: "manifest", power: 16 },
+  "elemental-3": { mp: 11, kind: "attack", power: 28 },
+  // 複合魔法(Phase 5b)
+  "c-stormnet": { mp: 7, kind: "net" },
+  "c-mend": { mp: 8, kind: "mend" },
+  "c-meteor": { mp: 8, kind: "pierce", power: 16 },
+  "c-moonmed": { mp: 4, kind: "meditate" },
 };
 export const FX_TEXT: Record<SpellFx["kind"], string> = {
   attack: "攻撃", light: "次の攻撃1.5倍", foresee: "次の行動を1回かわす", calm: "精神力+15", resonate: "相手の攻撃力2ターン半分", shield: "次の痛手-8",
   net: "相手を1ターン止める", vines: "素早さを消す・3ターン痛手2", heal: "体力+20", read: "相手の次の3手がわかる", unseal: "硬い殻・ためた力を解く",
+  aegis: "次の痛手を全部防ぐ", manifest: "攻撃+次の痛手-8", mend: "体力+20・精神力+15", pierce: "硬い殻を貫く攻撃", meditate: "このあと毎ターン魔力+3",
 };
 export const MOVE_TEXT: Record<FoeMove, { clear: string; vague: string }> = {
   strike: { clear: "殴りかかろうとしている", vague: "動こうとしている" },
@@ -51,7 +62,7 @@ export const MOVE_TEXT: Record<FoeMove, { clear: string; vague: string }> = {
 
 export type Companion = NonNullable<ReturnType<typeof companionSupport>>;
 export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null };
-export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: ch.learnedSpells.filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch) });
+export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: [...ch.learnedSpells, ...ch.world.compounds].filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch) });
 export const maxes = (c: Ctx) => ({ hp: Math.round(40 + c.stats.physical), mp: Math.round(20 + (c.stats.intellect + c.stats.creativity) * 0.5), sp: Math.round(20 + c.stats.spirit) });
 
 export type State = {
@@ -62,6 +73,8 @@ export type State = {
   stunned: boolean; reveal: number; log: string[]; over: null | "win" | "lose" | "draw" | "retreat";
   /** 相棒の手助けは1戦に1回 */
   companionUsed?: boolean;
+  /** 月の瞑想で増える、毎ターンの魔力の回復 */
+  regen?: number;
 };
 
 const rnd = (s: State) => { s.seed = (s.seed * 1103515245 + 12345) >>> 0; return (s.seed % 1000) / 1000; };
@@ -77,7 +90,7 @@ export function hint(s: State, c: Ctx) {
 }
 const statFor: Record<string, StatKey> = Object.fromEntries(Object.values(COURSES).map((c) => [c.key, c.stat]));
 function spellDamage(c: Ctx, id: string, base: number) {
-  const sys = spellById(id)!.system;
+  const sys = magicSystem(id)!;
   return base * (1 + c.stats[statFor[sys]] / 100) * (1 + (c.prof[sys] ?? 0) / 200);
 }
 
@@ -93,12 +106,12 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
   const foeFirst = move === "quick" && s.foe.vines === 0 && !(cmd.type === "spell" && SPELL_FX[cmd.id]?.first);
   let guard = false;
 
-  const hitFoe = (raw: number) => {
+  const hitFoe = (raw: number, pierce = false) => {
     let d = raw * s.buff.mult; s.buff.mult = 1;
-    if (s.foe.shell) d /= 2;
+    if (s.foe.shell && !pierce) d /= 2;
     const dmg = Math.max(1, Math.round(d));
     s.foe.hp = Math.max(0, s.foe.hp - dmg);
-    say(`${o.name}に ${dmg} の痛手${s.foe.shell ? "(硬い殻で半分)" : ""}。`);
+    say(`${o.name}に ${dmg} の痛手${s.foe.shell ? (pierce ? "(硬い殻を貫いた)" : "(硬い殻で半分)") : ""}。`);
   };
   const myAction = () => {
     if (s.stunned) { s.stunned = false; say("心が揺れて、動けなかった。"); return; }
@@ -125,7 +138,7 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
     if (!fx || !c.spells.includes(cmd.id)) throw new Error("その呪文は使えません");
     if (s.me.mp < fx.mp) throw new Error("魔力が足りない");
     s.me.mp -= fx.mp;
-    const name = spellById(cmd.id)!.name;
+    const name = magicName(cmd.id);
     say(`「${name}」!`);
     switch (fx.kind) {
       case "attack": hitFoe(spellDamage(c, cmd.id, fx.power!)); break;
@@ -139,6 +152,11 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
       case "heal": s.me.hp = Math.min(s.max.hp, s.me.hp + 20); say("体力が回復した(+20)。"); break;
       case "read": s.reveal = 3; say("相手の動きの並びが読めた。"); break;
       case "unseal": if (s.foe.shell || s.foe.charged) { s.foe.shell = false; s.foe.charged = false; say("硬い殻とためた力が解けた。"); } else say("解くものはなかった。"); break;
+      case "aegis": s.buff.dodge = true; say("星の軌道が盾になった(次の痛手を防ぐ)。"); break;
+      case "manifest": hitFoe(spellDamage(c, cmd.id, fx.power!)); s.buff.shield = BATTLE.shieldBlock; say("思い描いた盾が残った。"); break;
+      case "mend": s.me.hp = Math.min(s.max.hp, s.me.hp + 20); s.me.sp = Math.min(s.max.sp, s.me.sp + 15); say("心と体が癒やされた(体力+20・精神力+15)。"); break;
+      case "pierce": hitFoe(spellDamage(c, cmd.id, fx.power!), true); break;
+      case "meditate": s.regen = 3; say("月明かりのように心が澄んだ(毎ターン魔力+3)。"); break;
     }
   };
   const hurtMe = (raw: number) => {
@@ -172,7 +190,7 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
   if (s.foe.vines > 0 && s.foe.hp > 0) { s.foe.vines--; s.foe.hp = Math.max(0, s.foe.hp - 2); say("つる草が締めつけた(2)。"); }
   if (s.foe.weak > 0) s.foe.weak--;
   if (s.reveal > 0) s.reveal--;
-  s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.mpRegen);
+  s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.mpRegen + (s.regen ?? 0));
   if (s.foe.hp <= 0) { s.over = "win"; say(`${o.name}に勝った!`); }
   else if (s.me.hp <= 0) { s.over = "lose"; say("膝をついた。今回はここまで。"); }
   else if (s.turn >= BATTLE.maxTurns) { s.over = "draw"; say("時間切れ。引き分け。"); }

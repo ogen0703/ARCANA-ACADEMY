@@ -15,7 +15,9 @@ export function available(time: TimeKey, weather: WeatherKey) {
 /** 出会う生物を決める(種から決まる。適性が高い系統・まだ仲間でない生物が出やすい) */
 export function encounter(ch: Character, time: TimeKey, weather: WeatherKey, seed: number): Creature {
   const list = available(time, weather);
-  const w = list.map((c) => 1 + (ch.magicAffinity[c.system].value ?? 0) / 50 + (recOf(ch, c.id).friend ? 0 : 1));
+  // 夜咲きの灯(複合魔法)を覚えていると、夜に夜の生き物と出会いやすい
+  const night = time === "night" && ch.world.compounds.includes("c-nightbloom");
+  const w = list.map((c) => 1 + (ch.magicAffinity[c.system].value ?? 0) / 50 + (recOf(ch, c.id).friend ? 0 : 1) + (night && c.times !== "any" ? 2 : 0));
   let r = ((seed * 9301 + 49297) % 233280) / 233280 * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; }
   return list[list.length - 1];
@@ -33,7 +35,9 @@ export function startDistance(ch: Character, c: Creature) {
 export function approachOptions(ch: Character, c: Creature) {
   const base = APPROACHES.map((a) => ({ action: a.id as string, label: a.id === "offer" ? `好物(${materialById(c.favorite)?.name})を差し出す` : a.label, ok: a.id === "offer" ? qtyOf(ch, c.favorite) > 0 : !a.needs || ch.learnedSpells.includes(a.needs) }));
   const spells = ch.learnedSpells.filter((s) => ["astral-1", "mind-1", "nature-1", "creation-1", "elemental-1", "ancient-1", "mind-2"].includes(s)).map((s) => ({ action: `spell:${s}`, label: "", ok: true }));
-  return [...base, ...spells];
+  // 古き声の通訳(複合魔法):古代の生き物には呪文と同じだけ効く
+  const old = ch.world.compounds.includes("c-oldvoice") ? [{ action: "spell:c-oldvoice", label: "", ok: true }] : [];
+  return [...base, ...spells, ...old];
 }
 
 /** 1つの近づき方で、心の距離がどれだけ縮まるか(同じ近づき方の2回目は半分) */
@@ -42,7 +46,7 @@ export function approachValue(c: Creature, action: string, used: string[]) {
   let v = P.approachOther;
   if (kind === c.likes) v = P.approachLiked;
   else if (kind === "offer") v = P.approachOffer;
-  else if (kind === "spell" && c.spells.includes(arg)) v = P.approachSpell;
+  else if (kind === "spell" && (c.spells.includes(arg) || (arg === "c-oldvoice" && c.system === "ancient"))) v = P.approachSpell;
   return used.includes(action) ? Math.floor(v / 2) : v;
 }
 export const reaction = (v: number) => (v >= 4 ? "うれしそうに近づいてきた" : v >= 3 ? "興味を持ってこちらを見ている" : v >= 2 ? "少しだけ近づいた" : "まだ様子をうかがっている");

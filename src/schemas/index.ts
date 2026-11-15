@@ -99,7 +99,10 @@ export const CharacterSchema = z.object({
     creatures: z.record(z.string(), z.object({ friend: z.boolean(), attempts: z.number().int().min(0), affection: z.number().min(0).max(100) })).default({}),
     companion: z.string().nullable().default(null),
     companionDaily: z.object({ date: z.string(), gained: z.number().min(0) }).default({ date: "", gained: 0 }),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 } }),
+    /** 魔法研究室(Phase 5b):複合魔法ごとの研究の段数と、覚えた複合魔法 */
+    research: z.record(z.string(), z.number().int().min(0)).default({}),
+    compounds: z.array(z.string()).default([]),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [] }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -160,7 +163,7 @@ export const StatHistorySchema = z.object({
   id: z.string(),
   at: iso,
   eventId: z.string(),
-  kind: z.enum(["stat", "exp", "level", "spell"]),
+  kind: z.enum(["stat", "exp", "level", "spell", "compound"]),
   key: z.string(),
   before: z.number(),
   after: z.number(),
@@ -232,6 +235,18 @@ export const SanctuaryLogSchema = z.object({
 });
 export type SanctuaryLog = z.infer<typeof SanctuaryLogSchema>;
 
+/* ---------- 魔法研究室の記録(Phase 5b) ---------- */
+export const ResearchLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  a: z.string(),
+  b: z.string(),
+  result: z.enum(["progress", "learned", "weak", "miss"]),
+  compound: z.string().nullable().default(null),
+});
+export type ResearchLog = z.infer<typeof ResearchLogSchema>;
+
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
   app: z.literal("arcana-academy"),
@@ -246,6 +261,7 @@ export const ExportSchema = z.object({
   battleLog: z.array(BattleLogSchema).default([]),
   talkLog: z.array(TalkLogSchema).default([]),
   sanctuaryLog: z.array(SanctuaryLogSchema).default([]),
+  researchLog: z.array(ResearchLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 

@@ -1,6 +1,7 @@
 /** 成長レポート(Phase 3)。反映済みの経験と成長履歴から、期間ごとのまとめを作る。純粋関数 */
 import { MAGIC_LABELS, PERSONALITY_LABELS, STAT_LABELS, type ExperienceEvent, type MagicKey, type PersonalityKey, type StatHistory, type StatKey } from "../schemas";
 import { CATEGORY_DEFS } from "./growth/rules";
+import { biggestShift } from "./growth/personalityHistory";
 
 export type PeriodKey = "thisWeek" | "lastWeek" | "thisMonth" | "lastMonth";
 export const PERIOD_LABELS: Record<PeriodKey, string> = { thisWeek: "今週", lastWeek: "先週", thisMonth: "今月", lastMonth: "先月" };
@@ -47,6 +48,8 @@ export function buildReport(experiences: ExperienceEvent[], history: StatHistory
     if (topCats.length) lines.push(`中心は「${CATEGORY_DEFS[topCats[0][0] as keyof typeof CATEGORY_DEFS].label}」(${topCats[0][1]}件)。`);
     if (topStats.length) lines.push(`いちばん伸びたのは${STAT_LABELS[topStats[0][0]].name}(+${topStats[0][1]})。`);
     if (topPers.length) lines.push(`行動に表れていたのは「${topPers.map(([k]) => PERSONALITY_LABELS[k]).join("・")}」。`);
+    const shift = biggestShift(experiences, from, to);
+    if (shift) lines.push(`この期間いちばん前に出てきた性格は「${shift.label}」(+${shift.diff})。`);
     if (topMagic.length) lines.push(`${MAGIC_LABELS[topMagic[0][0]].name}の兆しが強まっている。`);
   }
   // AIに渡すまとめ(タイトルと数字だけ。くわしい内容や振り返りは入れない)

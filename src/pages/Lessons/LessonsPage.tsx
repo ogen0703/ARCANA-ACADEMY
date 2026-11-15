@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { COURSES, UNITS } from "../../game/academy/content";
-import { nextUnit, proficiencyOf, unitCounts } from "../../game/academy/engine";
+import { nextUnit, proficiencyOf, unitCounts, unitOpen } from "../../game/academy/engine";
 import { P } from "../../game/growth/rules";
 import { MAGIC_KEYS, MAGIC_LABELS } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -30,7 +30,7 @@ export default function LessonsPage() {
                   <p className="text-xs text-arcane-300">{c.teacher.name} {c.teacher.title}</p>
                   <div className="mt-2 flex justify-between text-xs"><span>熟練度</span><span className="num text-gold-200">{prof}</span></div>
                   <Bar value={prof} />
-                  <p className="mt-2 text-xs text-candle">{n == null ? `全${UNITS[k].length}単元修了 ・ 復習できる` : `次:単元${n + 1}「${UNITS[k][n].title}」`} <span className="text-arcane-300/60">({done}/{UNITS[k].length})</span></p>
+                  <p className="mt-2 text-xs text-candle">{n == null ? `全${UNITS[k].length}単元修了 ・ 復習できる` : (unitOpen(ch, k, n) ? `次:単元${n + 1}「${UNITS[k][n].title}」` : "上級課程:条件がそろうとひらく")} <span className="text-arcane-300/60">({done}/{UNITS[k].length})</span></p>
                 </Link>
               </li>
             );

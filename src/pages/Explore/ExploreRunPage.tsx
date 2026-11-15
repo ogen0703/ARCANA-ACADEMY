@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { placeById, materialById, discoveryById } from "../../game/academy/explore";
 import { roomOptions, type Step } from "../../game/academy/exploreEngine";
-import { spellById } from "../../game/academy/content";
+import { magicName } from "../../game/academy/compound";
 import { explore } from "../../services/storage/repo";
 import { MagicCircle, Panel } from "../../components/ui";
 import { ART } from "../../game/world/art";
@@ -71,11 +71,11 @@ export default function ExploreRunPage() {
         <Panel title={opt.room.name}>
           <p className="font-serif text-lg" data-testid="room-desc">{opt.room.desc}</p>
           <div className="mt-3 grid gap-2">
-            {usable.map((s) => <button key={s.id} className="btn btn-primary justify-start" onClick={() => choose(s.method, `「${spellById(s.id)?.name}」で通った`)}>✧ 呪文「{spellById(s.id)?.name}」を使う</button>)}
+            {usable.map((s) => <button key={s.id} className="btn btn-primary justify-start" onClick={() => choose(s.method, `「${magicName(s.id)}」で通った`)}>✧ 呪文「{magicName(s.id)}」を使う</button>)}
             {opt.companion && <button className="btn justify-start border-gold-400/50" onClick={() => choose(opt.companion!.method, opt.companion!.label)}>❦ {opt.companion.label}</button>}
             {opt.alts.map((a) => <button key={a.method} className="btn justify-start" onClick={() => choose(a.method, `${a.label}`)}>{a.label}</button>)}
             {opt.canSkip && <button className="btn justify-start" onClick={() => choose("skip", "読めないまま先へ進んだ")}>読めないまま先へ進む(発見はなし)</button>}
-            {opt.spells.filter((s) => !s.learned).length > 0 && <p className="text-[11px] text-arcane-300/70">ここでは「{opt.spells.filter((s) => !s.learned).map((s) => spellById(s.id)?.name).join("」「")}」も使えそう(まだ覚えていない)</p>}
+            {opt.spells.filter((s) => !s.learned).length > 0 && <p className="text-[11px] text-arcane-300/70">ここでは「{opt.spells.filter((s) => !s.learned).map((s) => magicName(s.id)).join("」「")}」も使えそう(まだ覚えていない)</p>}
             {blocked && <p className="text-sm text-candle" data-testid="blocked">今の呪文では通れない。また今度。</p>}
           </div>
           <button className="btn-ghost mt-3 rounded px-2 text-sm text-arcane-300" onClick={() => (i === 0 ? history.back() : finish(steps))}>{i === 0 ? "入らずに戻る" : "ここで引き返す(持ち帰る)"}</button>

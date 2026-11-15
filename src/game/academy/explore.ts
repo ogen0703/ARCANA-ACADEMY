@@ -37,11 +37,11 @@ export const PLACES: Place[] = [
     rooms: [
       { id: "t1", name: "崩れた参道", desc: "瓦礫が道をふさいでいる。", spells: [], alts: ["よじ登る", "回り道を探す"], items: ["stardust"] },
       { id: "t2", name: "暗い回廊", desc: "真っ暗で先が見えない。", spells: ["astral-1", "elemental-1"], alts: ["壁伝いに手探りで進む"], items: ["candlestand"] },
-      { id: "t3", name: "碑文の間", desc: "壁一面に古代文字が刻まれている。", spells: ["ancient-1"], alts: [], passWithout: true, items: [], discovery: "d-stele" },
+      { id: "t3", name: "碑文の間", desc: "壁一面に古代文字が刻まれている。", spells: ["ancient-1", "c-flamescript"], alts: [], passWithout: true, items: [], discovery: "d-stele" },
       { id: "t4", name: "つたの扉", desc: "つたに覆われた扉がある。", spells: ["nature-1", "elemental-1"], alts: ["手で少しずつほどく"], items: ["glowmoss"] },
       { id: "t5", name: "割れた床の大穴", desc: "向こう岸まで床がない。", spells: ["creation-2", "creation-1"], alts: [], items: ["starshard"] },
       { id: "t6", name: "星図の天井", desc: "天井の星図に、何かが隠れている。", spells: ["astral-2"], alts: [], items: [], discovery: "d-ceiling" },
-      { id: "t7", name: "封印の祭壇", desc: "最奥。祭壇は封じられている。", spells: ["ancient-2"], alts: [], items: ["staremblem"], discovery: "d-altar" },
+      { id: "t7", name: "封印の祭壇", desc: "最奥。祭壇は封じられている。", spells: ["ancient-2", "c-starlock"], alts: [], items: ["staremblem"], discovery: "d-altar" },
     ],
   },
   {
@@ -52,8 +52,8 @@ export const PLACES: Place[] = [
       { id: "a2", name: "囁く書架", desc: "惑わせる声が聞こえる。", spells: ["mind-1"], alts: ["耳をふさいで一気に抜ける"], items: ["violetink"] },
       { id: "a3", name: "崩れた書架の山", desc: "本が崩れて道がない。", spells: ["creation-1"], alts: ["本を片付けながら進む"], items: ["oldpaper"] },
       { id: "a4", name: "灯りのない閲覧室", desc: "暗い。火を使うと本が危ない。", spells: ["astral-1"], alts: ["灯火の術をごく小さく使う"], items: [], discovery: "d-diary" },
-      { id: "a5", name: "鎖の書", desc: "鎖で封じられた本がある。", spells: ["ancient-2"], alts: [], items: [], discovery: "d-chain" },
-      { id: "a6", name: "写本室", desc: "最奥。読めない文字の写本が並ぶ。", spells: ["ancient-1"], alts: [], items: ["oldcodex"], discovery: "d-codex" },
+      { id: "a5", name: "鎖の書", desc: "鎖で封じられた本がある。", spells: ["ancient-2", "c-starlock"], alts: [], items: [], discovery: "d-chain" },
+      { id: "a6", name: "写本室", desc: "最奥。読めない文字の写本が並ぶ。", spells: ["ancient-1", "c-flamescript"], alts: [], items: ["oldcodex"], discovery: "d-codex" },
     ],
   },
 ];

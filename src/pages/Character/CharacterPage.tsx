@@ -7,6 +7,8 @@ import { levelProgress } from "../../game/growth/engine";
 import { MAGIC_KEYS, MAGIC_LABELS, PERSONALITY_KEYS, PERSONALITY_LABELS, STAT_KEYS, STAT_LABELS, type StatKey } from "../../schemas";
 import { Bar, Panel, StatRadar } from "../../components/ui";
 import Academy3D from "../../components/three/Academy3D";
+import { auraOf, rankOf } from "../../game/growth/appearance";
+import PersonalityShift from "../../components/PersonalityShift";
 
 export default function CharacterPage() {
   const { character: ch, experiences, history, run, burst } = useGame();
@@ -14,6 +16,7 @@ export default function CharacterPage() {
   const [name, setName] = useState(ch?.name ?? "");
   if (!ch) return null;
   const prog = levelProgress(ch);
+  const rank = rankOf(ch), aura = auraOf(ch);
   const byEvent = new Map<string, typeof history>();
   history.forEach((h) => byEvent.set(h.eventId, [...(byEvent.get(h.eventId) ?? []), h]));
   const timeline = experiences.filter((e) => e.analysisStatus === "applied");
@@ -38,9 +41,11 @@ export default function CharacterPage() {
               <dt>出身</dt><dd className="text-[#e9e4f7]">{ch.history.origin}</dd>
               <dt>所属寮</dt><dd className="text-[#e9e4f7]">{ch.history.house ?? "入学時の診断で決まる"}</dd>
               <dt>魔法の杖</dt><dd className="text-[#e9e4f7]">{ch.history.wand ?? <Link to="/quests" className="text-candle">杖えらびの儀で決まる</Link>}</dd>
-              <dt>ローブ</dt><dd className="text-[#e9e4f7]">{ch.appearance.robe}</dd>
-              <dt>オーラ</dt><dd className="text-[#e9e4f7]">{ch.appearance.aura}</dd>
+              <dt>位</dt><dd className="text-[#e9e4f7]" data-testid="rank">{rank.name}</dd>
+              <dt>装い</dt><dd className="text-[#e9e4f7]">{rank.desc}</dd>
+              <dt>オーラ</dt><dd className="text-[#e9e4f7]">{aura.label ? <><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: aura.colors[0] }} />{aura.label}の色{["(淡い)", "", "(強い)", "(とても強い)"][aura.level]}</> : "診断のあとに色づく"}</dd>
             </dl>
+            {rank.next.length > 0 && <p className="text-[11px] text-arcane-300/80">次の位:{rank.next.map((n) => `${n.met ? "✓" : "・"}${n.label}(いま${n.now})`).join(" ")}</p>}
           </div>
         </div>
       </Panel>
@@ -75,6 +80,10 @@ export default function CharacterPage() {
             );
           })}
         </ul>
+      </Panel>
+
+      <Panel title="性格の移り変わり">
+        <PersonalityShift experiences={experiences} diagnosedAt={ch.diagnosedAt} />
       </Panel>
 
       <Panel title="魔法適性" right={ch.diagnosedAt ? <Link to="/magic" className="text-xs text-candle">くわしく →</Link> : <Link to="/diagnosis" className="btn btn-primary px-3 py-1 text-xs">入学診断を受ける</Link>}>

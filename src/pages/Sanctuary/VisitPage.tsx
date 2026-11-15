@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { approachOptions, approachValue, encounter, reaction, recOf, startDistance } from "../../game/academy/creaturesEngine";
-import { spellById } from "../../game/academy/content";
+import { magicName } from "../../game/academy/compound";
 import { ambienceOf } from "../../game/world/ambience";
 import { visitSanctuary } from "../../services/storage/repo";
 import { P } from "../../game/growth/rules";
@@ -35,7 +35,7 @@ export default function VisitPage() {
     setActions(list); setLines((l) => [...l, reaction(v)]);
     if (d - v <= 0 || list.length >= P.approachesPerVisit) finish(list);
   };
-  const label = (o: { action: string; label: string }) => (o.action.startsWith("spell:") ? `呪文「${spellById(o.action.slice(6))?.name}」を使う` : o.label);
+  const label = (o: { action: string; label: string }) => (o.action.startsWith("spell:") ? `呪文「${magicName(o.action.slice(6))}」を使う` : o.label);
   return (
     <div className="mx-auto grid max-w-xl gap-4">
       <div className="panel relative overflow-hidden p-4 text-center">

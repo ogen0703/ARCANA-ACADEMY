@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { SPELL_FX, ctxOf, fxLabel, hint, opponentById, startBattle, step, unlocked, type Command, type State } from "../../game/academy/battle";
-import { spellById } from "../../game/academy/content";
+import { magicName } from "../../game/academy/compound";
 import { materialById } from "../../game/academy/explore";
 import { finishBattle } from "../../services/storage/repo";
 import { Bar, Panel } from "../../components/ui";
@@ -65,7 +65,7 @@ export default function BattlePage() {
             <div className="grid grid-cols-2 gap-2">
               {ctx.spells.map((id) => (
                 <button key={id} disabled={st.me.mp < SPELL_FX[id].mp} onClick={() => act({ type: "spell", id })} className="rounded-lg border border-gold-500/40 px-2 py-1.5 text-left text-xs hover:bg-gold-500/10 disabled:opacity-40">
-                  <span className="text-gold-200">{spellById(id)?.name}</span> <span className="num text-arcane-300">魔力{SPELL_FX[id].mp}</span><span className="block text-[10px] text-arcane-300/80">{fxLabel(id)}</span>
+                  <span className="text-gold-200">{magicName(id)}</span> <span className="num text-arcane-300">魔力{SPELL_FX[id].mp}</span><span className="block text-[10px] text-arcane-300/80">{fxLabel(id)}</span>
                 </button>
               ))}
             </div>
