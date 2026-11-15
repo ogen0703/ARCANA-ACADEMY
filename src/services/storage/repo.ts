@@ -4,6 +4,7 @@ import { createCharacter, createPlayer } from "../../game/character/create";
 import { applyGrowth } from "../../game/growth/engine";
 import { applyLesson, learnSpells } from "../../game/academy/engine";
 import { applyBattle, type Command } from "../../game/academy/battle";
+import { gift as giftTo, receive as receiveFromNpc, talk as talkWith } from "../../game/academy/npcEngine";
 import { applyExploration, claimTeacherQuest, claimWeekly, makeWand, type Step } from "../../game/academy/exploreEngine";
 import type { MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -32,6 +33,40 @@ export const listHistory = () => db.statHistory.orderBy("at").reverse().toArray(
 export const listLessons = () => db.lessonLog.orderBy("at").reverse().toArray();
 export const listExplorations = () => db.exploreLog.orderBy("at").reverse().toArray();
 export const listBattles = () => db.battleLog.orderBy("at").reverse().toArray();
+export const listTalks = () => db.talkLog.orderBy("at").reverse().toArray();
+
+const todayTalks = (npc: string) => db.talkLog.where("date").equals(todayLocal()).filter((t) => t.npc === npc).toArray();
+/** 話す(1人1日5回まで) */
+export async function talkTo(npc: string, choice: number | null) {
+  return db.transaction("rw", [db.characters, db.talkLog], async () => {
+    const logs = await todayTalks(npc);
+    const now = nowIso();
+    const r = talkWith(await getCharacter(), npc, choice, logs.filter((l) => l.kind === "talk" || l.kind === "chat").length, now);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.talkLog.put({ id: newId(), at: now, date: todayLocal(), npc, kind: r.kind, gain: r.gain, detail: r.kind === "talk" ? `choice:${choice}` : "" });
+    return r;
+  });
+}
+/** 贈り物(1人1日1回) */
+export async function giveGift(npc: string, item: string) {
+  return db.transaction("rw", [db.characters, db.talkLog], async () => {
+    const logs = await todayTalks(npc); const now = nowIso();
+    const r = giftTo(await getCharacter(), npc, item, logs.some((l) => l.kind === "gift"), now);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.talkLog.put({ id: newId(), at: now, date: todayLocal(), npc, kind: "gift", gain: r.gain, detail: item });
+    return r;
+  });
+}
+/** 仲間のお裾分け(1日1回) */
+export async function receiveFrom(npc: string) {
+  return db.transaction("rw", [db.characters, db.talkLog], async () => {
+    const logs = await todayTalks(npc); const now = nowIso();
+    const r = receiveFromNpc(await getCharacter(), npc, logs.some((l) => l.kind === "receive"), now);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.talkLog.put({ id: newId(), at: now, date: todayLocal(), npc, kind: "receive", gain: 0, detail: r.item });
+    return r;
+  });
+}
 
 /** 戦闘を終える:記録したコマンドをルールで再生して結果を決め、報酬は1日3勝まで */
 export async function finishBattle(opp: string, seed: number, cmds: Command[]) {
@@ -224,7 +259,7 @@ export async function exportAll(): Promise<ExportData> {
   return ExportSchema.parse({
     app: "arcana-academy", schemaVersion: SCHEMA_VERSION, exportedAt: nowIso(),
     player: (await db.player.get("player")) ?? null, character: (await db.characters.get("hero")) ?? null,
-    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(), exploreLog: await db.exploreLog.toArray(), battleLog: await db.battleLog.toArray(),
+    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(), exploreLog: await db.exploreLog.toArray(), battleLog: await db.battleLog.toArray(), talkLog: await db.talkLog.toArray(),
   });
 }
 
@@ -233,8 +268,8 @@ export async function importAll(raw: unknown) {
   const data = ExportSchema.parse(raw);
   if (data.schemaVersion > SCHEMA_VERSION) throw new Error("新しいバージョンのデータです。アプリを更新してから読み込んでください");
   const backup = await exportAll();
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog, db.exploreLog, db.battleLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear()]);
     if (data.player) await db.player.put(data.player);
     // 古い形のデータは今の形に直してから入れる
     if (data.character) await db.characters.put(data.schemaVersion < 3 ? migrateCharacterV3(data.character, data.experiences) : data.character);
@@ -243,14 +278,15 @@ export async function importAll(raw: unknown) {
     await db.lessonLog.bulkPut(data.lessonLog);
     await db.exploreLog.bulkPut(data.exploreLog);
     await db.battleLog.bulkPut(data.battleLog);
+    await db.talkLog.bulkPut(data.talkLog);
   });
   await ensureInitialized();
   return backup;
 }
 
 export async function deleteAllData() {
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog, db.exploreLog, db.battleLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog, db.exploreLog, db.battleLog, db.talkLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear(), db.exploreLog.clear(), db.battleLog.clear(), db.talkLog.clear()]);
   });
   await ensureInitialized();
 }

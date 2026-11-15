@@ -92,7 +92,10 @@ export const CharacterSchema = z.object({
     activeTitle: z.string().nullable().default(null),
     /** 決闘演習場で勝ったことのある相手(Phase 4c) */
     defeated: z.array(z.string()).default([]),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [] }),
+    /** 学院の人たち(Phase 4d):次の話題の番号と、選んだ答えの記録(物語で参照。性格の値には使わない) */
+    npcTopics: z.record(z.string(), z.number().int().min(0)).default({}),
+    answers: z.array(z.string()).default([]),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [] }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -201,6 +204,18 @@ export const BattleLogSchema = z.object({
 });
 export type BattleLog = z.infer<typeof BattleLogSchema>;
 
+/* ---------- 交流の記録(Phase 4d) ---------- */
+export const TalkLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  npc: z.string(),
+  kind: z.enum(["talk", "chat", "gift", "receive"]),
+  gain: z.number().min(0),
+  detail: z.string().max(80).default(""),
+});
+export type TalkLog = z.infer<typeof TalkLogSchema>;
+
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
   app: z.literal("arcana-academy"),
@@ -213,6 +228,7 @@ export const ExportSchema = z.object({
   lessonLog: z.array(LessonLogSchema).default([]),
   exploreLog: z.array(ExploreLogSchema).default([]),
   battleLog: z.array(BattleLogSchema).default([]),
+  talkLog: z.array(TalkLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 

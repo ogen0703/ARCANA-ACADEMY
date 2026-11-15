@@ -11,12 +11,15 @@ import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { Panel } from "../../components/ui";
 import { spellById } from "../../game/academy/content";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
+import { NPCS, stageOf } from "../../game/academy/npc";
+import { episodesOf, trustOf } from "../../game/academy/npcEngine";
 import { Link } from "react-router-dom";
 
 const TABS = [
   { id: "report", label: "成長レポート" },
   { id: "timeline", label: "成長年表" },
   { id: "magic", label: "魔法図鑑" },
+  { id: "people", label: "人物" },
   { id: "creatures", label: "魔法生物図鑑" },
   { id: "explore", label: "探索記録" },
 ] as const;
@@ -139,6 +142,25 @@ const Empty = ({ text }: { text: string }) => (
   </div>
 );
 
+function PeopleBook() {
+  const { character: ch } = useGame();
+  if (!ch) return null;
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2" data-testid="people-book">
+      {NPCS.map((n) => {
+        const t = trustOf(ch, n.id), eps = episodesOf(ch, n.id);
+        return (
+          <li key={n.id} className="rounded-xl border border-arcane-500/20 p-3">
+            <p className="font-serif text-gold-200">{n.name} <span className="text-[11px] text-arcane-300">{n.role}</span></p>
+            <p className="text-xs text-arcane-300">{stageOf(t).name}(信頼 {t})</p>
+            {eps.length ? <ul className="mt-1 space-y-1 text-xs">{eps.map((e, i) => <li key={i}>・{e}</li>)}</ul> : <p className="mt-1 text-xs text-arcane-300/50">まだ昔話を聞いていない</p>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function ExploreBook() {
   const { character: ch, explorations } = useGame();
   if (!ch) return null;
@@ -179,6 +201,7 @@ export default function EncyclopediaPage() {
         {tab === "report" && <Report />}
         {tab === "timeline" && <Timeline />}
         {tab === "magic" && <MagicBook />}
+        {tab === "people" && <PeopleBook />}
         {tab === "creatures" && <Empty text="まだ出会った魔法生物はいない。魔法生物保護区がひらく Phase 5 から記録されます。" />}
         {tab === "explore" && <ExploreBook />}
       </div>

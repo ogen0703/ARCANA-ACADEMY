@@ -17,6 +17,8 @@ import ExploreRunPage from "../pages/Explore/ExploreRunPage";
 import QuestsPage from "../pages/Quests/QuestsPage";
 import ArenaPage from "../pages/Arena/ArenaPage";
 import BattlePage from "../pages/Arena/BattlePage";
+import LoungePage from "../pages/Lounge/LoungePage";
+import NpcPage from "../pages/Lounge/NpcPage";
 
 // GDD 12章の画面構成。スマホの下のメニューは5つまで(魔法・設定は学院から行ける)
 const NAV = [
@@ -72,6 +74,8 @@ export default function App() {
                 <Route path="/quests" element={<QuestsPage />} />
                 <Route path="/arena" element={<ArenaPage />} />
                 <Route path="/arena/:opp" element={<BattlePage />} />
+                <Route path="/lounge" element={<LoungePage />} />
+                <Route path="/lounge/:id" element={<NpcPage />} />
                 <Route path="/encyclopedia" element={<EncyclopediaPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>

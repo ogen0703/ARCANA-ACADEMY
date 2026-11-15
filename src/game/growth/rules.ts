@@ -62,6 +62,10 @@ export const P = {
   exploreExpPerRoom: 2, exploreExpMax: 10,
   teacherQuestProf: 10,
   weeklyQuestExp: 20, weeklyQuestCount: 3, streakWeeks: 4,
+  // ---- Phase 4d 交流(世界設定書で承認。会話は1人1日5回にげんたが変更)----
+  talksPerDay: 5, // 1人あたり。1回目は話題つき、2回目からはひとこと
+  trustHit: 8, trustOther: 4, trustResonate: 10, trustChat: 1, trustGiftLiked: 10, trustGift: 3,
+  trustLessonStage: 40, trustLessonMult: 1.2, trustTitle: 70,
 };
 
 /** 次のレベルまでに必要な経験値(レベルLからL+1) */

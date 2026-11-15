@@ -5,6 +5,7 @@ import { MAGIC_KEYS, STAT_LABELS, type Character, type MagicKey, type StatHistor
 import { P } from "../growth/rules";
 import { addExp } from "../growth/engine";
 import { COURSES, SPELLS, UNITS, type Spell } from "./content";
+import { lessonTrustMult } from "./npcEngine";
 export { houseFor } from "./content";
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -18,7 +19,7 @@ export const unitOpen = (ch: Character, k: MagicKey, i: number) => i === 0 || un
 export function lessonGain(ch: Character, k: MagicKey, unit: number, correct: boolean) {
   const repeat = unitCounts(ch, k)[unit] > 0;
   const aff = ch.magicAffinity[k].value;
-  const mult = (aff == null ? 1 : 0.8 + aff / 250) * (repeat ? P.lessonRepeatFactor : 1);
+  const mult = (aff == null ? 1 : 0.8 + aff / 250) * (repeat ? P.lessonRepeatFactor : 1) * lessonTrustMult(ch, k);
   const prof = r1(Math.min(100 - proficiencyOf(ch, k), (P.lessonProf + (correct ? P.lessonProfCorrect : 0)) * mult));
   const exp = P.lessonExp + (correct ? P.lessonExpCorrect : 0);
   return { prof: Math.max(0, prof), exp, repeat, mult };

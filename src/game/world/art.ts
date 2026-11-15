@@ -15,6 +15,8 @@ export const ART = {
   /** 演習の相手 */
   foe: (k: string) => (k === "teacher" ? `${base}art/teacher-elemental.webp` : `${base}art/foe-${k}.webp`),
   arena: `${base}art/arena.webp`,
+  /** 学院の人たち(先生は授業の立ち絵) */
+  npc: (id: string) => (id.startsWith("t-") ? `${base}art/teacher-${id.slice(2)}.webp` : `${base}art/npc-${id}.webp`),
 };
 /** 広間の画像の縦横比(1536×1024) */
 export const HALL_ASPECT = 1.5;
