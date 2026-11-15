@@ -44,7 +44,7 @@ export default function EffectOverlay() {
               <div className="relative mx-auto h-64 w-40"><FallbackImg srcs={[ART.awakened]} className="h-full w-full object-contain drop-shadow-[0_0_24px_rgba(244,214,140,0.6)]" /></div>
               <p className="font-display text-sm tracking-[0.4em] text-gold-300">AWAKENING</p>
               <p className="font-serif text-3xl text-gold-200 drop-shadow-[0_0_18px_rgba(244,214,140,0.7)]">星継ぎの覚醒</p>
-              <p className="mt-1 text-sm text-arcane-300">七つ星の仔と心が重なった。七つ星の仔が仲間になった</p>
+              <p className="mt-1 text-sm text-arcane-300">七つ星の仔と心が重なり、仲間になった</p>
             </>
           ) : effect.kind === "rank" ? (
             <>

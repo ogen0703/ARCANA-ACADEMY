@@ -71,7 +71,8 @@ try {
   await p.getByTestId("scene").getByText("七つ星の仔").first().waitFor();
   for (const n of ["そっと待つ", "静かに声をかける", "星の光で小さな形を作って見せる"]) await p.getByRole("button", { name: n }).click();
   await p.getByTestId("meet").click();
-  await p.getByTestId("effect-overlay").getByText("AWAKENING").waitFor();
+  await p.getByTestId("effect-overlay").getByText("AWAKENING").waitFor(); await p.waitForTimeout(800);
+  await p.screenshot({ path: `${out}/awaken.png` });
   await p.getByTestId("effect-overlay").click();
   // 保護区に七つ星の仔
   await p.goto(B + "/sanctuary"); await p.getByTestId("friends").getByText("七つ星の仔").first().waitFor(); await p.getByTestId("star-lights").waitFor();
@@ -86,6 +87,8 @@ try {
   if (await star.isDisabled()) fail("星継ぎの装いが解放されていない");
   await star.click(); await p.waitForTimeout(300);
   if ((await star.getAttribute("aria-pressed")) !== "true") fail("衣装を着替えられない");
+  await p.goto(B + "/"); await p.getByTestId("art-scene").waitFor(); await p.waitForTimeout(1200);
+  await p.getByTestId("art-scene").screenshot({ path: `${out}/hall-starheir.png` });
   await p.goto(B + "/encyclopedia"); await p.getByRole("tab", { name: "物語" }).click();
   const n = await p.getByTestId("story-log").locator("li").count(); if (n !== 8) fail(`物語の記録が${n}件`);
   await p.getByRole("tab", { name: "成長年表" }).click(); await p.getByTestId("timeline-story").first().waitFor();
