@@ -22,6 +22,7 @@ import NpcPage from "../pages/Lounge/NpcPage";
 import SanctuaryPage from "../pages/Sanctuary/SanctuaryPage";
 import VisitPage from "../pages/Sanctuary/VisitPage";
 import ResearchPage from "../pages/Research/ResearchPage";
+import StoryPage from "../pages/Story/StoryPage";
 
 // GDD 12章の画面構成。スマホの下のメニューは5つまで(魔法・設定は学院から行ける)
 const NAV = [
@@ -81,6 +82,7 @@ export default function App() {
                 <Route path="/lounge/:id" element={<NpcPage />} />
                 <Route path="/sanctuary" element={<SanctuaryPage />} />
                 <Route path="/sanctuary/visit" element={<VisitPage />} />
+                <Route path="/story" element={<StoryPage />} />
                 <Route path="/research" element={<ResearchPage />} />
                 <Route path="/encyclopedia" element={<EncyclopediaPage />} />
                 <Route path="*" element={<HomePage />} />

@@ -64,6 +64,15 @@ export const P = {
   rankApprentice: { level: 1 }, rankMage: { level: 10, mid: 3 }, rankArchmage: { level: 20, adv: 2 },
   auraSteps: [40, 60, 80], // オーラが強くなる適性
   turningPoint: 5, turningDays: 30, // 30日で性格が5以上動いたら「心の転機」
+  // ---- Phase 5c 第1章「七つ目の星」(世界設定書で承認)----
+  storyExp: 5, // 場面を読むと EXP +5(1日1場面)
+  storyRealDays6: 10, storyRealDays8: 14, // 場面6・8:現実の経験を承認した日の通算
+  storyTrust: 5, storyProf: 5, // 選択で信頼+5・熟練度+5
+  storyNightVisits: 3, storyTrustC: 40, // 道B:夜の保護区3回 / 道C:先生2人と仲間2人の信頼40
+  sevenstarStart: 8, sevenstarLiked: 4, sevenstarOther: 2, sevenstarSpell: 3, // 七つ星の仔と心を通わせる
+  sevenstarReal: 3, sevenstarRealMax: 9, // 現実の経験で+3(1日最大+9)
+  awakenTurns: 3, awakenMult: 1.5, // 覚醒:3ターン、呪文の魔力半分・威力1.5倍
+  houseFormalTrust: 70, // 寮の正装:自分の寮の仲間の信頼70
   // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
   explorePerDay: 2,
   exploreExpPerRoom: 2, exploreExpMax: 10,

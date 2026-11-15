@@ -9,13 +9,14 @@ import { proficiencyOf } from "./engine";
 import { companionSupport } from "./creaturesEngine";
 
 export type FoeMove = "strike" | "quick" | "intimidate" | "charge" | "heavy";
-export type Opponent = { id: string; name: string; hp: number; atk: number; desc: string; shell?: boolean; pattern: FoeMove[]; good: string[]; exp: number; reward: string; title?: string };
+export type Opponent = { id: string; name: string; hp: number; atk: number; desc: string; shell?: boolean; pattern: FoeMove[]; good: string[]; exp: number; reward: string; title?: string; story?: boolean };
 export const OPPONENTS: Opponent[] = [
   { id: "dummy", name: "藁と石の演習人形", hp: 30, atk: 5, desc: "まっすぐ殴るだけ。フォルトナー先生の練習台", pattern: ["strike"], good: [], exp: 5, reward: "stardust" },
   { id: "wisp", name: "跳ねる灯り玉", hp: 28, atk: 6, desc: "素早く、先に動く", pattern: ["quick", "quick", "strike"], good: ["nature-1"], exp: 7, reward: "glowmoss" },
   { id: "shadow", name: "書架の影", hp: 40, atk: 6, desc: "禁書庫から迷い出た影。威圧で精神力を削る", pattern: ["strike", "intimidate", "strike"], good: ["mind-1", "mind-2"], exp: 9, reward: "violetink", title: "影を鎮めた者" },
   { id: "golem", name: "試作ゴーレム", hp: 60, atk: 9, desc: "ケスター先生の試作品。硬い殻をもち、力をためて大打撃", shell: true, pattern: ["strike", "charge", "heavy"], good: ["ancient-2", "creation-2", "astral-2"], exp: 12, reward: "starshard" },
   { id: "echo", name: "星の残響", hp: 70, atk: 10, desc: "廃神殿の祭壇の守り。3手をくり返す", pattern: ["intimidate", "charge", "heavy"], good: ["ancient-1", "astral-2"], exp: 15, reward: "staremblem", title: "星の残響を鎮めた者" },
+  { id: "starshade", name: "目覚めた星影", hp: 55, atk: 8, desc: "封印からあふれた星の力。眠りを破られて怯えている(物語・道A)", pattern: ["quick", "charge", "heavy", "strike"], good: ["astral-1", "astral-2", "ancient-2"], exp: 12, reward: "stardust", story: true },
   { id: "teacher", name: "模擬決闘 フォルトナー先生", hp: 90, atk: 11, desc: "すべての型を使う。1〜5に勝つと挑める", shell: true, pattern: ["quick", "intimidate", "charge", "heavy", "strike"], good: [], exp: 15, reward: "starshard", title: "先生に認められた者" },
 ];
 export const opponentById = (id: string) => OPPONENTS.find((o) => o.id === id);
@@ -61,8 +62,8 @@ export const MOVE_TEXT: Record<FoeMove, { clear: string; vague: string }> = {
 };
 
 export type Companion = NonNullable<ReturnType<typeof companionSupport>>;
-export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null };
-export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: [...ch.learnedSpells, ...ch.world.compounds].filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch) });
+export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null; awaken?: boolean };
+export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: [...ch.learnedSpells, ...ch.world.compounds].filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch), awaken: ch.world.companion === "sevenstar" && (ch.world.creatures.sevenstar?.affection ?? 0) >= 80 });
 export const maxes = (c: Ctx) => ({ hp: Math.round(40 + c.stats.physical), mp: Math.round(20 + (c.stats.intellect + c.stats.creativity) * 0.5), sp: Math.round(20 + c.stats.spirit) });
 
 export type State = {
@@ -75,6 +76,8 @@ export type State = {
   companionUsed?: boolean;
   /** 月の瞑想で増える、毎ターンの魔力の回復 */
   regen?: number;
+  /** 星継ぎの覚醒(1戦1回、残りターン) */
+  awaken?: number; awakenUsed?: boolean;
 };
 
 const rnd = (s: State) => { s.seed = (s.seed * 1103515245 + 12345) >>> 0; return (s.seed % 1000) / 1000; };
@@ -93,8 +96,9 @@ function spellDamage(c: Ctx, id: string, base: number) {
   const sys = magicSystem(id)!;
   return base * (1 + c.stats[statFor[sys]] / 100) * (1 + (c.prof[sys] ?? 0) / 200);
 }
+const P_AWAKEN = { turns: 3, mult: 1.5 };
 
-export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" } | { type: "companion" };
+export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" } | { type: "companion" } | { type: "awaken" };
 /** 1ターン進める(元の State は変えない) */
 export function step(prev: State, c: Ctx, cmd: Command): State {
   if (prev.over) return prev;
@@ -130,18 +134,26 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
         case "attack": hitFoe(cp.power * cp.mult * (1 + c.stats.bond / 100)); break;
         case "unseal": if (s.foe.shell || s.foe.charged) { s.foe.shell = false; s.foe.charged = false; say("硬い殻とためた力が解けた。"); } else say("解くものはなかった。"); break;
         case "net": s.foe.netted = true; say(`風が${o.name}の動きを止めた。`); break;
+        case "blessing": s.buff.dodge = true; s.buff.mult = 1.5; say("星の加護に包まれた(次の痛手を防ぎ、次の攻撃1.5倍)。"); break;
       }
+      return;
+    }
+    if (cmd.type === "awaken") {
+      if (!c.awaken) throw new Error("覚醒はまだできない");
+      if (s.awakenUsed) throw new Error("覚醒は1戦に1回");
+      s.awakenUsed = true; s.awaken = P_AWAKEN.turns; say("七つ星の仔と心が重なった。――星継ぎの覚醒!(3ターン、呪文の魔力半分・威力1.5倍)");
       return;
     }
     if (cmd.type === "guard") { guard = true; s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.guardMp); s.me.sp = Math.min(s.max.sp, s.me.sp + BATTLE.guardSp); say("構えて、息を整えた。"); return; }
     const fx = SPELL_FX[cmd.id];
     if (!fx || !c.spells.includes(cmd.id)) throw new Error("その呪文は使えません");
-    if (s.me.mp < fx.mp) throw new Error("魔力が足りない");
-    s.me.mp -= fx.mp;
+    const cost = s.awaken ? Math.ceil(fx.mp / 2) : fx.mp;
+    if (s.me.mp < cost) throw new Error("魔力が足りない");
+    s.me.mp -= cost;
     const name = magicName(cmd.id);
     say(`「${name}」!`);
     switch (fx.kind) {
-      case "attack": hitFoe(spellDamage(c, cmd.id, fx.power!)); break;
+      case "attack": hitFoe(spellDamage(c, cmd.id, fx.power!) * (s.awaken ? P_AWAKEN.mult : 1)); break;
       case "light": s.buff.mult = 1.5; say("相手の弱点が照らし出された(次の攻撃1.5倍)。"); break;
       case "foresee": s.buff.dodge = true; say("相手の次の動きが見えた。"); break;
       case "calm": s.me.sp = Math.min(s.max.sp, s.me.sp + 15); say("心が静まった(精神力+15)。"); break;
@@ -153,9 +165,9 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
       case "read": s.reveal = 3; say("相手の動きの並びが読めた。"); break;
       case "unseal": if (s.foe.shell || s.foe.charged) { s.foe.shell = false; s.foe.charged = false; say("硬い殻とためた力が解けた。"); } else say("解くものはなかった。"); break;
       case "aegis": s.buff.dodge = true; say("星の軌道が盾になった(次の痛手を防ぐ)。"); break;
-      case "manifest": hitFoe(spellDamage(c, cmd.id, fx.power!)); s.buff.shield = BATTLE.shieldBlock; say("思い描いた盾が残った。"); break;
+      case "manifest": hitFoe(spellDamage(c, cmd.id, fx.power!) * (s.awaken ? P_AWAKEN.mult : 1)); s.buff.shield = BATTLE.shieldBlock; say("思い描いた盾が残った。"); break;
       case "mend": s.me.hp = Math.min(s.max.hp, s.me.hp + 20); s.me.sp = Math.min(s.max.sp, s.me.sp + 15); say("心と体が癒やされた(体力+20・精神力+15)。"); break;
-      case "pierce": hitFoe(spellDamage(c, cmd.id, fx.power!), true); break;
+      case "pierce": hitFoe(spellDamage(c, cmd.id, fx.power!) * (s.awaken ? P_AWAKEN.mult : 1), true); break;
       case "meditate": s.regen = 3; say("月明かりのように心が澄んだ(毎ターン魔力+3)。"); break;
     }
   };
@@ -190,6 +202,7 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
   if (s.foe.vines > 0 && s.foe.hp > 0) { s.foe.vines--; s.foe.hp = Math.max(0, s.foe.hp - 2); say("つる草が締めつけた(2)。"); }
   if (s.foe.weak > 0) s.foe.weak--;
   if (s.reveal > 0) s.reveal--;
+  if (s.awaken && cmd.type !== "awaken") s.awaken--;
   s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.mpRegen + (s.regen ?? 0));
   if (s.foe.hp <= 0) { s.over = "win"; say(`${o.name}に勝った!`); }
   else if (s.me.hp <= 0) { s.over = "lose"; say("膝をついた。今回はここまで。"); }
@@ -206,15 +219,19 @@ export function replay(c: Ctx, oppId: string, seed: number, cmds: Command[]) {
 }
 
 /* ---------- 挑める相手・ランク・称号 ---------- */
-export const unlocked = (defeated: string[], oppId: string) => {
-  const i = OPPONENTS.findIndex((o) => o.id === oppId);
-  if (oppId === "teacher") return OPPONENTS.slice(0, 5).every((o) => defeated.includes(o.id));
-  return i === 0 || defeated.includes(OPPONENTS[i - 1].id);
+const MAIN = OPPONENTS.filter((o) => !o.story);
+/** 物語の相手(道Aの場面6を読んだあと)に挑めるか */
+export const storyOpen = (ch: Character) => ch.world.story.route === "A" && ch.world.story.scene >= 6;
+export const unlocked = (defeated: string[], oppId: string, story = false) => {
+  if (opponentById(oppId)?.story) return story;
+  const i = MAIN.findIndex((o) => o.id === oppId);
+  if (oppId === "teacher") return MAIN.slice(0, 5).every((o) => defeated.includes(o.id));
+  return i === 0 || defeated.includes(MAIN[i - 1].id);
 };
 export function rankOf(defeated: string[]) {
   if (defeated.includes("teacher")) return { id: "gold", name: "金の徽章" };
-  if (OPPONENTS.slice(0, 5).every((o) => defeated.includes(o.id))) return { id: "silver", name: "銀の徽章" };
-  if (defeated.length >= 3) return { id: "bronze", name: "銅の徽章" };
+  if (MAIN.slice(0, 5).every((o) => defeated.includes(o.id))) return { id: "silver", name: "銀の徽章" };
+  if (defeated.filter((d) => MAIN.some((o) => o.id === d)).length >= 3) return { id: "bronze", name: "銅の徽章" };
   return { id: "novice", name: "見習い" };
 }
 export const moveLabel = (m: FoeMove) => MOVE_TEXT[m].clear;
@@ -226,7 +243,7 @@ import { materialById } from "./explore";
 import type { StatHistory } from "../../schemas";
 export function applyBattle(ch: Character, input: { id: string; opp: string; seed: number; cmds: Command[]; rewardedToday: number }, now: string, newId: () => string) {
   const o = opponentById(input.opp); if (!o) throw new Error("その相手はいません");
-  if (!unlocked(ch.world.defeated, o.id)) throw new Error("まだ挑めない相手です");
+  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch))) throw new Error("まだ挑めない相手です");
   const s = replay(ctxOf(ch), o.id, input.seed, input.cmds);
   if (!s.over) throw new Error("戦闘が終わっていません");
   const history: StatHistory[] = []; const items: Record<string, number> = {};

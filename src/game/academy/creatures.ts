@@ -17,7 +17,7 @@ export const APPROACHES: { id: Approach; label: string; needs?: string }[] = [
 export type Creature = {
   id: string; name: string; system: MagicKey; desc: string; times: TimeKey[] | "any"; weather?: WeatherKey;
   likes: Approach; favorite: string; spells: string[]; personality: PersonalityKey;
-  battle: { kind: "light" | "calm" | "shield" | "heal" | "attack" | "unseal" | "net"; label: string; power?: number };
+  battle: { kind: "light" | "calm" | "shield" | "heal" | "attack" | "unseal" | "net" | "blessing"; label: string; power?: number };
   explore: { rooms: string[]; label: string };
   stages: [string, string, string];
 };
@@ -38,9 +38,15 @@ export const CREATURES: Creature[] = [
   { id: "windjelly", name: "風渡りクラゲ", system: "elemental", desc: "宙を漂う透明なクラゲ。風と共に渡り歩く", times: "any", weather: "rain", likes: "wait", favorite: "stardust", spells: ["astral-1", "mind-1"], personality: "adventurousness",
     battle: { kind: "net", label: "風で相手を1ターン止める" }, explore: { rooms: ["t5"], label: "風で向こう岸へ渡してもらう" }, stages: ["ちびクラゲ", "風渡りクラゲ", "嵐渡りの大クラゲ"] },
 ];
-export const creatureById = (id: string) => CREATURES.find((c) => c.id === id);
-/** 物語(5c)で出会う特別な生物。図鑑では「？？？」のまま */
-export const HIDDEN_CREATURE = { id: "sevenstar", name: "七つ星の仔" };
+/** 物語(第1章の場面7)でだけ出会う特別な生物(Phase 5c)。保護区には出てこない */
+export const SEVENSTAR: Creature = { id: "sevenstar", name: "七つ星の仔", system: "astral", desc: "消えた七つ目の星のかけらから生まれた、手のひらほどの星の生き物", times: "any", likes: "wait", favorite: "stardust", spells: ["astral-1"], personality: "curiosity",
+  battle: { kind: "blessing", label: "星の加護(次の痛手を防ぎ、次の攻撃1.5倍)" }, explore: { rooms: [], label: "星の光で道を示してもらう" }, stages: ["七つ星の仔", "星の若獣", "七つ星の守り星"] };
+export const ALL_CREATURES: Creature[] = [...CREATURES, SEVENSTAR];
+export const creatureById = (id: string) => ALL_CREATURES.find((c) => c.id === id);
+/** 物語で出会う特別な生物。仲間になるまで図鑑では「？？？」 */
+export const HIDDEN_CREATURE = { id: SEVENSTAR.id, name: SEVENSTAR.name };
+/** 七つ星の仔の体の光(なつき度で1〜7) */
+export const sevenstarLights = (aff: number) => Math.min(7, 1 + Math.floor(aff / 15));
 
 export const STAGE_AT = [0, 40, 80];
 export const stageIndex = (aff: number) => (aff >= 80 ? 2 : aff >= 40 ? 1 : 0);

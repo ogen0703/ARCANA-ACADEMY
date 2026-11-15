@@ -104,8 +104,9 @@ export function setCompanion(ch: Character, id: string, now: string): Character 
 /** 現実の経験を承認したとき、相棒も少し育つ(1日最大+6) */
 export function realBoost(ch: Character, date: string, now: string): Character {
   const id = ch.world.companion; if (!id) return ch;
+  const star = id === "sevenstar"; // 七つ星の仔は現実の経験で育ちやすい(Phase 5c)
   const d = ch.world.companionDaily.date === date ? ch.world.companionDaily : { date, gained: 0 };
-  const add = Math.min(P.realAffection, P.realAffectionMax - d.gained); if (add <= 0) return ch;
+  const add = Math.min(star ? P.sevenstarReal : P.realAffection, (star ? P.sevenstarRealMax : P.realAffectionMax) - d.gained); if (add <= 0) return ch;
   const r = addAffection(ch, id, add, now);
   return { ...r.character, world: { ...r.character.world, companionDaily: { date, gained: d.gained + add } } };
 }
@@ -120,5 +121,5 @@ export function companionSupport(ch: Character) {
 /** 探索で相棒が手伝える部屋(若体から) */
 export function companionCanPass(ch: Character, roomId: string) {
   const id = ch.world.companion; const c = id ? creatureById(id) : undefined;
-  return !!c && recOf(ch, c.id).affection >= 40 && c.explore.rooms.includes(roomId);
+  return !!c && recOf(ch, c.id).affection >= 40 && (c.id === "sevenstar" || c.explore.rooms.includes(roomId));
 }

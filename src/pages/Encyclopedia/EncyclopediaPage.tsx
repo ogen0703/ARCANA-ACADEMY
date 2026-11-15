@@ -12,9 +12,11 @@ import { Panel } from "../../components/ui";
 import { spellById } from "../../game/academy/content";
 import { COMPOUNDS } from "../../game/academy/compound";
 import { turningPoints } from "../../game/growth/personalityHistory";
+import { StoryLog } from "../Story/StoryPage";
+import { CHAPTER1 } from "../../game/story/chapter1";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
-import { CREATURES } from "../../game/academy/creatures";
+import { CREATURES, SEVENSTAR, sevenstarLights } from "../../game/academy/creatures";
 import { recOf } from "../../game/academy/creaturesEngine";
 import { materialById } from "../../game/academy/explore";
 import { episodesOf, trustOf } from "../../game/academy/npcEngine";
@@ -23,6 +25,7 @@ import { Link } from "react-router-dom";
 const TABS = [
   { id: "report", label: "成長レポート" },
   { id: "timeline", label: "成長年表" },
+  { id: "story", label: "物語" },
   { id: "magic", label: "魔法図鑑" },
   { id: "people", label: "人物" },
   { id: "creatures", label: "魔法生物図鑑" },
@@ -81,17 +84,19 @@ function Report() {
 }
 
 function Timeline() {
-  const { experiences, history } = useGame();
+  const { experiences, history, character } = useGame();
+  const storyLog = character?.world.story.log ?? [];
   const applied = experiences.filter((e) => e.analysisStatus === "applied").sort((a, b) => a.date.localeCompare(b.date));
-  if (!applied.length) return <p className="text-sm text-arcane-300">まだ記録がありません。経験を承認すると、月ごとの年表になって残ります(消えません)。</p>;
+  if (!applied.length && !storyLog.length) return <p className="text-sm text-arcane-300">まだ記録がありません。経験を承認すると、月ごとの年表になって残ります(消えません)。</p>;
   const levels = history.filter((h) => h.kind === "level");
   const turns = turningPoints(experiences);
   const lvByEvent = new Map(levels.map((h) => [h.eventId, h]));
   const months = new Map<string, typeof applied>();
   applied.forEach((e) => { const m = e.date.slice(0, 7); months.set(m, [...(months.get(m) ?? []), e]); });
+  storyLog.forEach((l) => { const m = l.date.slice(0, 7); if (!months.has(m)) months.set(m, []); });
   return (
     <ol className="space-y-5">
-      {[...months.entries()].reverse().map(([m, evs]) => {
+      {[...months.entries()].sort((a, b) => a[0].localeCompare(b[0])).reverse().map(([m, evs]) => {
         const exp = evs.reduce((s, e) => s + (e.approvedGrowth?.exp ?? 0), 0);
         const st: Record<string, number> = {};
         evs.forEach((e) => Object.entries(e.approvedGrowth?.stats ?? {}).forEach(([k, v]) => { st[k] = (st[k] ?? 0) + v; }));
@@ -107,6 +112,7 @@ function Timeline() {
               {lvs.map((h) => <span key={h!.id} className="pill num bg-arcane-500/25 text-arcane-300">Lv.{h!.before}→{h!.after}</span>)}
               {top.map(([k, v]) => <span key={k} className="pill num bg-gold-500/15 text-gold-200">{STAT_LABELS[k as StatKey].name} +{Math.round(v * 10) / 10}</span>)}
             </div>
+            {storyLog.filter((l) => l.date.startsWith(m)).map((l) => <p key={`st${l.scene}`} className="mt-1 text-xs text-arcane-300" data-testid="timeline-story">✦ 物語({l.date.slice(5).replace("-", "/")}):第{l.scene}場「{CHAPTER1[l.scene - 1].title}」{l.choice && CHAPTER1[l.scene - 1].choices ? ` ・ ${CHAPTER1[l.scene - 1].choices!.find((c) => c.id === l.choice)?.label ?? ""}` : ""}</p>)}
             {turns.filter((t) => t.date.startsWith(m)).map((t) => <p key={t.date + t.key} className="mt-1 text-xs text-gold-200" data-testid="timeline-turn">✧ 心の転機({t.date.slice(5).replace("-", "/")}):この1か月で{t.label}が +{t.diff}{t.events.length ? `。きっかけ:${t.events.map((e) => e.title).join("、")}` : ""}</p>)}
             <ul className="mt-2 space-y-0.5 text-sm">
               {evs.map((e) => <li key={e.id} className="flex gap-2"><span className="num shrink-0 text-xs text-arcane-300/70">{e.date.slice(5)}</span><span className="truncate">{e.title}</span><span className="ml-auto shrink-0 text-[11px] text-arcane-300/60">{CATEGORY_DEFS[e.category].label}</span></li>)}
@@ -156,7 +162,9 @@ function CreatureBook() {
         const r = recOf(ch, c.id);
         return <li key={c.id} className={`rounded-xl border p-3 ${r.friend ? "border-gold-400/40 bg-gold-500/10" : "border-arcane-500/15"}`}>{r.friend || r.attempts ? <><p className="font-serif text-gold-200">{c.name} <span className="text-[11px] text-arcane-300">{MAGIC_LABELS[c.system].name}</span></p><p className="text-xs">{c.desc}</p><p className="mt-1 text-[11px] text-arcane-300">{r.friend ? `仲間 ・ なつき ${r.affection} ・ 好物:${materialById(c.favorite)?.name}` : `出会った(${r.attempts}回)・まだ仲間ではない`}</p></> : <p className="text-sm text-arcane-300/50">？？？(まだ出会っていない)</p>}</li>;
       })}
-      <li className="rounded-xl border border-arcane-500/15 p-3"><p className="text-sm text-arcane-300/50">？？？(物語の中で出会う)</p></li>
+      {recOf(ch, SEVENSTAR.id).friend
+        ? <li className="rounded-xl border border-gold-300/60 bg-gold-500/10 p-3"><p className="font-serif text-gold-200">{SEVENSTAR.name} <span className="text-[11px] text-arcane-300">物語で出会った</span></p><p className="text-xs">{SEVENSTAR.desc}</p><p className="mt-1 text-[11px] text-arcane-300">仲間 ・ なつき {recOf(ch, SEVENSTAR.id).affection} ・ 体の光 {sevenstarLights(recOf(ch, SEVENSTAR.id).affection)}/7</p></li>
+        : <li className="rounded-xl border border-arcane-500/15 p-3"><p className="text-sm text-arcane-300/50">？？？(物語の中で出会う)</p></li>}
     </ul>
   );
 }
@@ -219,6 +227,7 @@ export default function EncyclopediaPage() {
       <div role="tabpanel">
         {tab === "report" && <Report />}
         {tab === "timeline" && <Timeline />}
+        {tab === "story" && <StoryLog />}
         {tab === "magic" && <MagicBook />}
         {tab === "people" && <PeopleBook />}
         {tab === "creatures" && <CreatureBook />}

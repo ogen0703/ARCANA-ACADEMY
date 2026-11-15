@@ -102,7 +102,18 @@ export const CharacterSchema = z.object({
     /** 魔法研究室(Phase 5b):複合魔法ごとの研究の段数と、覚えた複合魔法 */
     research: z.record(z.string(), z.number().int().min(0)).default({}),
     compounds: z.array(z.string()).default([]),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [] }),
+    /** メインストーリー(Phase 5c):読んだ場面の数、選択、道、最後に読んだ日、第1章を終えたか、読んだ記録 */
+    story: z.object({
+      scene: z.number().int().min(0).default(0),
+      choices: z.record(z.string(), z.string()).default({}),
+      route: z.enum(["A", "B", "C"]).nullable().default(null),
+      lastRead: z.string().default(""),
+      cleared: z.boolean().default(false),
+      log: z.array(z.object({ scene: z.number().int(), date: z.string(), choice: z.string().nullable() })).default([]),
+    }).default({ scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }),
+    /** 着ている衣装(rank=位の装い / house=寮の正装 / starheir=星継ぎの装い) */
+    outfit: z.enum(["rank", "house", "starheir"]).default("rank"),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank" }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 

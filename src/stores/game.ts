@@ -3,7 +3,7 @@ import type { BattleLog, SanctuaryLog, ResearchLog, TalkLog, Character, Experien
 import { spellById } from "../game/academy/content";
 
 /** 承認・レベルアップの演出(表示だけ。数値は rule engine が決める) */
-export type Effect = { id: number; kind: "growth" | "level" | "spell" | "rank"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
+export type Effect = { id: number; kind: "growth" | "level" | "spell" | "rank" | "awaken"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
 import * as repo from "../services/storage/repo";
 import { checkInbox, type InboxResult } from "../services/inbox";
 

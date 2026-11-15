@@ -10,7 +10,7 @@ const gainOf = (ch: Character, base: number) => Math.max(1, Math.round(base * mu
 export const topicIndex = (ch: Character, npc: Npc) => (ch.world.npcTopics[npc.id] ?? 0) % npc.topics.length;
 export const canResonate = (ch: Character) => ch.learnedSpells.includes("mind-2");
 
-function setTrust(ch: Character, npc: Npc, add: number, now: string) {
+export function setTrust(ch: Character, npc: Npc, add: number, now: string) {
   const before = trustOf(ch, npc.id); const after = Math.min(100, before + add);
   const rel = ch.relationships.some((r) => r.id === npc.id)
     ? ch.relationships.map((r) => (r.id === npc.id ? { ...r, bond: after } : r))

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useGame } from "../../stores/game";
-import { SPELL_FX, ctxOf, fxLabel, hint, opponentById, startBattle, step, unlocked, type Command, type State } from "../../game/academy/battle";
+import { SPELL_FX, ctxOf, fxLabel, hint, opponentById, startBattle, step, storyOpen, unlocked, type Command, type State } from "../../game/academy/battle";
 import { magicName } from "../../game/academy/compound";
 import { materialById } from "../../game/academy/explore";
 import { finishBattle } from "../../services/storage/repo";
@@ -22,7 +22,7 @@ export default function BattlePage() {
   const [err, setErr] = useState("");
   if (!ch || !ctx) return null;
   if (!o || !st) return <Panel title="決闘演習場"><p className="text-sm">その相手はいません。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
-  if (!unlocked(ch.world.defeated, o.id) && !done) return <Panel title={o.name}><p className="text-sm">まだ挑めない相手です。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
+  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch)) && !done) return <Panel title={o.name}><p className="text-sm">まだ挑めない相手です。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
 
   const act = async (cmd: Command) => {
     setErr("");
@@ -69,6 +69,7 @@ export default function BattlePage() {
                 </button>
               ))}
             </div>
+            {ctx.awaken && <button data-testid="awaken" className="rounded-lg border border-gold-300 bg-gold-500/20 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.awakenUsed} onClick={() => act({ type: "awaken" })}><span className="text-gold-200">✦ 星継ぎの覚醒</span> <span className="text-[10px] text-arcane-300">{st.awaken ? `(あと${st.awaken}ターン)` : st.awakenUsed ? "(この戦闘ではもう使った)" : "3ターン、呪文の魔力半分・威力1.5倍"}</span></button>}
             {ctx.companion && <button className="rounded-lg border border-gold-400/50 bg-gold-500/10 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.companionUsed} onClick={() => act({ type: "companion" })}><span className="text-gold-200">相棒:{ctx.companion.name}</span> <span className="text-[10px] text-arcane-300">{st.companionUsed ? "(この戦闘ではもう手伝った)" : `${ctx.companion.label}${ctx.companion.mult > 1 ? ` ×${ctx.companion.mult}` : ""}`}</span></button>}
             <div className="grid grid-cols-3 gap-2">
               <button className="btn px-2 py-1.5 text-xs" onClick={() => act({ type: "staff" })}>{ch.history.wand ? "杖で打つ" : "杖で打つ(仮の杖)"}</button>

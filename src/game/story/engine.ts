@@ -1,0 +1,134 @@
+/**
+ * メインストーリーの進み方(Phase 5c)。純粋関数。
+ * 選択は物語の中のこと(誰と動くか・信頼・熟練度・仔の気質・称号)だけを変え、能力値・性格・魔法適性は変えない。
+ */
+import type { Character, StatHistory } from "../../schemas";
+import { P } from "../growth/rules";
+import { addExp } from "../growth/engine";
+import { setTrust, trustOf } from "../academy/npcEngine";
+import { npcById } from "../academy/npc";
+import { recOf } from "../academy/creaturesEngine";
+import { proficiencyOf } from "../academy/engine";
+import { CHAPTER1, ROUTES, type Route, type StoryState } from "./chapter1";
+
+/** 物語の外から渡す事実(保存の層が数える) */
+export type StoryCtx = { today: string; talkedMilo: boolean; realDays: number; nightVisits: number };
+export type Cond = { label: string; met: boolean; now?: string };
+
+const TEACHERS = ["t-astral", "t-mind", "t-creation", "t-nature", "t-elemental", "t-ancient"];
+const CLASSMATES = ["leon", "noe", "iris", "milo"];
+const has = (ch: Character, d: string) => ch.world.discoveries.includes(d);
+const logDate = (s: StoryState, scene: number) => s.log.find((l) => l.scene === scene)?.date ?? "";
+
+/** 道ごとの課題(場面7がひらく条件) */
+export function routeTask(ch: Character, ctx: StoryCtx): Cond[] {
+  const r = ch.world.story.route;
+  if (r === "A") return [{ label: "決闘演習場で「目覚めた星影」に勝つ", met: ch.world.defeated.includes("starshade") }];
+  if (r === "B") return [{ label: `夜の魔法生物保護区を${P.storyNightVisits}回歩く`, met: ctx.nightVisits >= P.storyNightVisits, now: `${Math.min(ctx.nightVisits, P.storyNightVisits)}` }];
+  if (r === "C") {
+    const t = TEACHERS.filter((id) => trustOf(ch, id) >= P.storyTrustC).length, c = CLASSMATES.filter((id) => trustOf(ch, id) >= P.storyTrustC).length;
+    return [{ label: `先生2人の信頼${P.storyTrustC}`, met: t >= 2, now: `${t}人` }, { label: `仲間2人の信頼${P.storyTrustC}`, met: c >= 2, now: `${c}人` }];
+  }
+  return [];
+}
+
+/** 次の場面と、ひらく条件 */
+export function nextScene(ch: Character, ctx: StoryCtx) {
+  const s = ch.world.story;
+  if (s.cleared || s.scene >= CHAPTER1.length) return { scene: null, conds: [] as Cond[], open: false, readToday: s.lastRead === ctx.today };
+  const scene = CHAPTER1[s.scene];
+  const conds: Cond[] = [];
+  switch (scene.no) {
+    case 1: conds.push({ label: "入学診断を受ける", met: !!ch.diagnosedAt }); break;
+    case 2: conds.push({ label: "談話室でミロと話す", met: ctx.talkedMilo }); break;
+    case 3: conds.push({ label: "廃神殿で「天井の星図」を見つける", met: has(ch, "d-ceiling") }); break;
+    case 4: conds.push({ label: "禁書庫で「書きかけの日誌」を見つける", met: has(ch, "d-diary") }, { label: "禁書庫で「鎖の書の一節」を見つける", met: has(ch, "d-chain") }); break;
+    case 5: conds.push({ label: "廃神殿で「祭壇の光」を見つける", met: has(ch, "d-altar") }, { label: "呪文「封印の鍵」か複合魔法「星読みの錠」を覚える", met: ch.learnedSpells.includes("ancient-2") || ch.world.compounds.includes("c-starlock") }); break;
+    case 6: conds.push({ label: "場面5の次の日になる", met: !!logDate(s, 5) && logDate(s, 5) < ctx.today }, { label: `現実の経験を承認した日が通算${P.storyRealDays6}日`, met: ctx.realDays >= P.storyRealDays6, now: `${ctx.realDays}日` }); break;
+    case 7: conds.push(...routeTask(ch, ctx)); break;
+    case 8: conds.push({ label: "七つ星の仔が仲間になる", met: recOf(ch, "sevenstar").friend }, { label: `現実の経験を承認した日が通算${P.storyRealDays8}日`, met: ctx.realDays >= P.storyRealDays8, now: `${ctx.realDays}日` }); break;
+  }
+  const readToday = s.lastRead === ctx.today;
+  return { scene, conds, open: conds.every((c) => c.met) && !readToday, readToday };
+}
+
+function addTitle(ch: Character, name: string, now: string): Character {
+  return ch.titles.some((t) => t.name === name) ? ch : { ...ch, titles: [...ch.titles, { id: `t-${ch.titles.length + 1}`, name, at: now }] };
+}
+function trustUp(ch: Character, id: string, now: string) { const n = npcById(id); return n ? setTrust(ch, n, P.storyTrust, now).character : ch; }
+
+/** 場面を読む(場面7は meetSevenstar で進める) */
+export function readScene(ch: Character, input: { id: string; choice: string | null }, ctx: StoryCtx, now: string, newId: () => string) {
+  const st = nextScene(ch, ctx);
+  if (!st.scene) throw new Error("第1章はもう読み終えた");
+  if (st.readToday) throw new Error("物語は1日1場面。また明日");
+  if (!st.open) throw new Error("この場面はまだひらいていない");
+  const sc = st.scene;
+  if (sc.no === 7) throw new Error("七つ星の仔と心を通わせよう");
+  const pick = sc.choices ? sc.choices.find((c) => c.id === input.choice) : null;
+  if (sc.choices && !pick) throw new Error("選択肢を選んでね");
+  let c: Character = ch; const s = ch.world.story;
+  const choices = pick ? { ...s.choices, [String(sc.no)]: pick.id } : s.choices;
+  let route = s.route;
+  if (sc.no === 2 && pick) { if (pick.id === "together") c = trustUp(c, "milo", now); if (pick.id === "teacher") c = trustUp(c, "t-astral", now); }
+  if (sc.no === 3 && pick) {
+    if (pick.id === "wait") c = trustUp(c, "t-astral", now);
+    if (pick.id === "self") c = { ...c, academy: { ...c.academy, proficiency: { ...c.academy.proficiency, astral: Math.min(100, Math.round((proficiencyOf(c, "astral") + P.storyProf) * 10) / 10) } } };
+  }
+  if (sc.no === 5 && pick) route = pick.id as Route;
+  const cleared = sc.no === 8;
+  if (cleared && route) c = addTitle(c, ROUTES[route].title, now);
+  c = { ...c, world: { ...c.world, story: { ...s, choices, route, scene: s.scene + 1, lastRead: ctx.today, cleared, log: [...s.log, { scene: sc.no, date: ctx.today, choice: pick?.id ?? null }] } }, updatedAt: now };
+  const history: StatHistory[] = [];
+  c = addExp(c, P.storyExp, input.id, now, newId, history);
+  return { character: c, history, scene: sc, reply: pick?.reply ?? "", cleared };
+}
+
+/** 場面7:七つ星の仔に近づく(近づき方は3つまで。好む近づき方は道で変わる) */
+export const SEVENSTAR_APPROACHES = [
+  { id: "wait", label: "そっと待つ" }, { id: "call", label: "静かに声をかける" }, { id: "run", label: "一緒に駆け回る" },
+  { id: "make", label: "星の光で小さな形を作って見せる" }, { id: "spell:astral-1", label: "呪文「星灯」で光を灯す" },
+];
+const likedOf = (r: Route | null) => (r === "A" ? "run" : r === "B" ? "wait" : "call");
+export function sevenstarValue(route: Route | null, action: string, used: string[]) {
+  const v = action === likedOf(route) ? P.sevenstarLiked : action === "spell:astral-1" ? P.sevenstarSpell : P.sevenstarOther;
+  return used.includes(action) ? Math.floor(v / 2) : v;
+}
+export function meetSevenstar(ch: Character, input: { id: string; actions: string[] }, ctx: StoryCtx, now: string, newId: () => string) {
+  const st = nextScene(ch, ctx);
+  if (!st.scene || st.scene.no !== 7) throw new Error("まだ七つ星の仔には会えない");
+  if (st.readToday) throw new Error("物語は1日1場面。また明日");
+  if (!st.open) throw new Error("道の課題を終えよう");
+  if (input.actions.length < 1 || input.actions.length > 3) throw new Error("近づき方は1〜3つ");
+  const s = ch.world.story, rec = recOf(ch, "sevenstar");
+  let d = P.sevenstarStart - Math.min(3, rec.attempts); const used: string[] = [];
+  for (const a of input.actions) {
+    if (!SEVENSTAR_APPROACHES.some((x) => x.id === a)) throw new Error("その近づき方はできない");
+    if (a === "spell:astral-1" && !ch.learnedSpells.includes("astral-1")) throw new Error("「星灯」をまだ覚えていない");
+    if (d <= 0) throw new Error("記録が正しくありません");
+    d -= sevenstarValue(s.route, a, used); used.push(a);
+  }
+  const friend = d <= 0;
+  let c: Character = { ...ch, world: { ...ch.world, creatures: { ...ch.world.creatures, sevenstar: { friend, attempts: rec.attempts + 1, affection: rec.affection } }, companion: friend ? "sevenstar" : ch.world.companion } };
+  c = { ...c, world: { ...c.world, story: { ...s, lastRead: ctx.today, scene: friend ? s.scene + 1 : s.scene, log: friend ? [...s.log, { scene: 7, date: ctx.today, choice: null }] : s.log } }, updatedAt: now };
+  const history: StatHistory[] = [];
+  if (friend) c = addExp(c, P.storyExp, input.id, now, newId, history);
+  return { character: c, history, friend, left: Math.max(0, d) };
+}
+
+/** 衣装(Phase 5c) */
+const HOUSE_MATE: Record<string, string> = { "暁火の寮": "leon", "月影の寮": "noe", "星環の寮": "iris" };
+export function outfitsOf(ch: Character) {
+  const mate = ch.history.house ? HOUSE_MATE[ch.history.house] : undefined;
+  return [
+    { id: "rank" as const, name: "位の装い", ok: true, how: "はじめから(位に合わせて変わる)" },
+    { id: "house" as const, name: "寮の正装", ok: !!mate && trustOf(ch, mate) >= P.houseFormalTrust, how: mate ? `${npcById(mate)?.name}の信頼${P.houseFormalTrust}` : "寮が決まってから" },
+    { id: "starheir" as const, name: "星継ぎの装い", ok: ch.world.story.cleared, how: "第1章を読み終える" },
+  ];
+}
+export function setOutfit(ch: Character, id: "rank" | "house" | "starheir", now: string): Character {
+  const o = outfitsOf(ch).find((x) => x.id === id);
+  if (!o?.ok) throw new Error("まだ着られない");
+  return { ...ch, world: { ...ch.world, outfit: id }, updatedAt: now };
+}
+export const routeLabel = (r: Route | null) => (r ? ROUTES[r].label : "");

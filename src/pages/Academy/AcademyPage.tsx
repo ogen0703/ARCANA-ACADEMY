@@ -43,6 +43,7 @@ export default function AcademyPage() {
       </Panel>
       <Panel title="学院の中で">
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Link to="/story" className="rounded-xl border border-gold-300/80 bg-gold-500/15 p-3 hover:bg-gold-500/25 sm:col-span-2" data-testid="story-link"><p className="font-serif text-gold-200">物語 ・ 第1章「七つ目の星」</p><p className="text-xs text-arcane-300">消えた星と、魂を継ぐ者の物語(1日1場面)</p></Link>
           <Link to="/lessons" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">講義棟 ・ 授業</p><p className="text-xs text-arcane-300">6つの講座で呪文を覚える(1日3コマ)</p></Link>
           <Link to="/explore" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">探索</p><p className="text-xs text-arcane-300">廃神殿と禁書庫(1日2回)</p></Link>
           <Link to="/arena" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">決闘演習場</p><p className="text-xs text-arcane-300">覚えた呪文で演習の相手と戦う</p></Link>

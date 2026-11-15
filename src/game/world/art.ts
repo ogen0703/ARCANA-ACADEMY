@@ -18,6 +18,10 @@ export const ART = {
   foe: (k: string) => (k === "teacher" ? `${base}art/teacher-elemental.webp` : `${base}art/foe-${k}.webp`),
   arena: `${base}art/arena.webp`,
   sanctuary: `${base}art/sanctuary.webp`,
+  /** 物語(Phase 5c):封印の祭壇、覚醒の姿、衣装 */
+  altar: `${base}art/story-altar.webp`,
+  awakened: `${base}art/hero-awakened.webp`,
+  outfit: (id: string) => `${base}art/hero-${id}.webp`,
   /** 魔法生物(幼体・若体は young、成体は通常の絵) */
   creature: (id: string, stage: number) => (stage >= 2 ? [`${base}art/creature-${id}.webp`] : [`${base}art/creature-${id}-young.webp`, `${base}art/creature-${id}.webp`]),
   /** 学院の人たち(先生は授業の立ち絵) */
@@ -31,5 +35,7 @@ export const HERO_LAYOUT = { x: 0.5, feetY: 0.9, heightPct: 66, orb: { x: 0.131,
 export const HERO_ORBS: Record<number, { x: number; y: number }> = { 0: HERO_LAYOUT.orb, 1: { x: 0.256, y: 0.047 }, 2: { x: 0.236, y: 0.062 } };
 /** 位ごとの立ち絵の横幅÷高さ(相棒を体の横に置くため) */
 export const HERO_ASPECTS: Record<number, number> = { 0: 617 / 1522, 1: 940 / 1522, 2: 1007 / 1522 };
+/** 衣装の立ち絵の、杖の光の位置と横幅÷高さ。絵を入れたら合わせる */
+export const OUTFIT_LAYOUT: Record<string, { orb: { x: number; y: number }; aspect: number }> = { house: { orb: HERO_LAYOUT.orb, aspect: 0.5 }, starheir: { orb: HERO_LAYOUT.orb, aspect: 0.5 } };
 /** 床の魔法陣の中心と幅(広間の画像に対する割合) */
 export const FLOOR = { x: 0.5, y: 0.775, widthPct: 56 };

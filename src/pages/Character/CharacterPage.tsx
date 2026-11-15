@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { P } from "../../game/growth/rules";
 import { useGame } from "../../stores/game";
-import { renameCharacter } from "../../services/storage/repo";
+import { chooseOutfit, renameCharacter } from "../../services/storage/repo";
+import { outfitsOf } from "../../game/story/engine";
 import { levelProgress } from "../../game/growth/engine";
 import { MAGIC_KEYS, MAGIC_LABELS, PERSONALITY_KEYS, PERSONALITY_LABELS, STAT_KEYS, STAT_LABELS, type StatKey } from "../../schemas";
 import { Bar, Panel, StatRadar } from "../../components/ui";
@@ -45,6 +46,10 @@ export default function CharacterPage() {
               <dt>装い</dt><dd className="text-[#e9e4f7]">{rank.desc}</dd>
               <dt>オーラ</dt><dd className="text-[#e9e4f7]">{aura.label ? <><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: aura.colors[0] }} />{aura.label}の色{["(淡い)", "", "(強い)", "(とても強い)"][aura.level]}</> : "診断のあとに色づく"}</dd>
             </dl>
+            <div className="flex flex-wrap gap-1.5 pt-1" data-testid="outfits">
+              {outfitsOf(ch).map((o) => <button key={o.id} disabled={!o.ok} aria-pressed={ch.world.outfit === o.id} title={o.ok ? "" : o.how} onClick={() => run(() => chooseOutfit(o.id))}
+                className={`pill text-[11px] ${ch.world.outfit === o.id ? "bg-gold-500/25 text-gold-200" : "bg-night-800 text-arcane-300"} disabled:opacity-40`}>{o.ok ? "" : "🔒"}{o.name}</button>)}
+            </div>
             {rank.next.length > 0 && <p className="text-[11px] text-arcane-300/80">次の位:{rank.next.map((n) => `${n.met ? "✓" : "・"}${n.label}(いま${n.now})`).join(" ")}</p>}
           </div>
         </div>
