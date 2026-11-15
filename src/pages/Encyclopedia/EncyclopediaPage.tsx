@@ -13,6 +13,7 @@ import { spellById } from "../../game/academy/content";
 import { COMPOUNDS } from "../../game/academy/compound";
 import { turningPoints } from "../../game/growth/personalityHistory";
 import { StoryLog } from "../Story/StoryPage";
+import { AchievementBook } from "../Progress/ProgressPages";
 import { CHAPTER1 } from "../../game/story/chapter1";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
@@ -26,6 +27,7 @@ const TABS = [
   { id: "report", label: "成長レポート" },
   { id: "timeline", label: "成長年表" },
   { id: "story", label: "物語" },
+  { id: "achievements", label: "実績" },
   { id: "magic", label: "魔法図鑑" },
   { id: "people", label: "人物" },
   { id: "creatures", label: "魔法生物図鑑" },
@@ -228,6 +230,7 @@ export default function EncyclopediaPage() {
         {tab === "report" && <Report />}
         {tab === "timeline" && <Timeline />}
         {tab === "story" && <StoryLog />}
+        {tab === "achievements" && <AchievementBook />}
         {tab === "magic" && <MagicBook />}
         {tab === "people" && <PeopleBook />}
         {tab === "creatures" && <CreatureBook />}

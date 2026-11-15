@@ -1,5 +1,5 @@
 // 自分のファイルはネット優先(更新をすぐ反映)、つながらなければキャッシュ。データ(IndexedDB)には触らない
-const CACHE = "arcana-v23";
+const CACHE = "arcana-v24";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (e) => {

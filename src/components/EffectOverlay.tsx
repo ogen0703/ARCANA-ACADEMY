@@ -39,7 +39,14 @@ export default function EffectOverlay() {
           {Array.from({ length: 14 }, (_, i) => <span key={i} style={{ ["--a" as string]: `${(i / 14) * 360}deg`, animationDelay: `${(i % 4) * 0.06}s` }} />)}
         </div>
         <div className="fx-text relative px-6">
-          {effect.kind === "awaken" ? (
+          {effect.kind === "achievement" ? (
+            <>
+              <p className="font-display text-sm tracking-[0.4em] text-gold-300">ACHIEVEMENT</p>
+              {effect.spells?.length ? <p className="font-serif text-2xl text-gold-200 drop-shadow-[0_0_18px_rgba(244,214,140,0.7)]">{effect.spells.slice(0, 4).join(" ・ ")}{effect.spells.length > 4 ? ` ほか${effect.spells.length - 4}つ` : ""}</p> : null}
+              <p className="mt-1 text-sm text-arcane-300">{effect.spells?.length ? "実績を達成した(図鑑の「実績」)" : ""}</p>
+              {effect.title && <p className="mt-1 text-sm text-gold-200">✦ {effect.title}</p>}
+            </>
+          ) : effect.kind === "awaken" ? (
             <>
               <div className="relative mx-auto h-64 w-40"><FallbackImg srcs={[ART.awakened]} className="h-full w-full object-contain drop-shadow-[0_0_24px_rgba(244,214,140,0.6)]" /></div>
               <p className="font-display text-sm tracking-[0.4em] text-gold-300">AWAKENING</p>
@@ -67,8 +74,8 @@ export default function EffectOverlay() {
           ) : (
             <p className="font-serif text-2xl text-gold-200">成長が刻まれた</p>
           )}
-          {effect.kind !== "spell" && effect.kind !== "rank" && effect.kind !== "awaken" && <p className="mt-2 max-w-[18em] truncate text-sm text-[#e9e4f7]">{effect.title}</p>}
-          {effect.kind !== "spell" && !!effect.spells?.length && <p className="mt-2 text-sm text-gold-200">✧ 新しい呪文「{effect.spells.join("」「")}」を覚えた</p>}
+          {effect.kind !== "spell" && effect.kind !== "rank" && effect.kind !== "awaken" && effect.kind !== "achievement" && <p className="mt-2 max-w-[18em] truncate text-sm text-[#e9e4f7]">{effect.title}</p>}
+          {effect.kind !== "spell" && effect.kind !== "achievement" && !!effect.spells?.length && <p className="mt-2 text-sm text-gold-200">✧ 新しい呪文「{effect.spells.join("」「")}」を覚えた</p>}
           <ul className="mt-2 flex max-w-[20em] flex-wrap justify-center gap-1.5">
             {Object.entries(effect.stats).filter(([, v]) => v > 0).map(([k, v]) => <li key={k} className="pill num bg-gold-500/20 text-gold-200">{STAT_LABELS[k as StatKey]?.name ?? k} +{v}</li>)}
             {effect.exp > 0 && <li className="pill num bg-arcane-500/25 text-arcane-300">EXP +{effect.exp}</li>}

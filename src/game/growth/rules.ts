@@ -76,6 +76,9 @@ export const P = {
   // ---- Phase 6a 魔法薬研究棟と星影の庭園(世界設定書で承認)----
   brewPerDay: 2, brewProf: 2, brewFineProf: 100, potionMax: 5, fineMult: 1.5, // 調合
   gardenAffection: 2, gardenBloomsForTwo: 7, restMult: 1.1, // 庭を歩く
+  // ---- Phase 6b 実績・学院内評価・寮内ランキング(世界設定書で承認)----
+  achievementExp: 10, // 実績1つで EXP +10
+  rankMin: 10, rankMax: 50, houseStarTitle: "寮の星", // 寮の仲間の週の点・初めての1位の称号
   // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
   explorePerDay: 2,
   exploreExpPerRoom: 2, exploreExpMax: 10,

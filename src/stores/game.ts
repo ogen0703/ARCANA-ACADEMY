@@ -3,7 +3,7 @@ import type { BattleLog, SanctuaryLog, ResearchLog, TalkLog, Character, Experien
 import { spellById } from "../game/academy/content";
 
 /** 承認・レベルアップの演出(表示だけ。数値は rule engine が決める) */
-export type Effect = { id: number; kind: "growth" | "level" | "spell" | "rank" | "awaken"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
+export type Effect = { id: number; kind: "growth" | "level" | "spell" | "rank" | "awaken" | "achievement"; spells?: string[]; title: string; stats: Record<string, number>; exp: number; levelFrom: number; levelTo: number };
 import * as repo from "../services/storage/repo";
 import { checkInbox, type InboxResult } from "../services/inbox";
 
@@ -28,7 +28,17 @@ export const useGame = create<State>((set, get) => ({
   load: async () => {
     try {
       await repo.ensureInitialized();
-      const [character, player, experiences, history, lessons, explorations, battles, talks, sanctuary, research] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks(), repo.listSanctuary(), repo.listResearch()]);
+      const [first, player, experiences, history0, lessons, explorations, battles, talks, sanctuary, research] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks(), repo.listSanctuary(), repo.listResearch()]);
+      // 実績と寮の星(Phase 6b):新しく満たしたものがあれば記録して、演出を出す
+      let character = first, history = history0;
+      try {
+        const r = await repo.syncAchievements({ experiences, lessons, explorations, battles, talks, sanctuary, research });
+        if (r.changed) {
+          character = r.character; history = [...r.history, ...history0];
+          const names = r.got.map((a) => a.name);
+          if (names.length || r.star) set({ burst: get().burst + 1, effect: { id: Date.now(), kind: "achievement", spells: names, title: r.star ? "先週、寮内ランキングで1位になった" : "", stats: {}, exp: names.length * 10, levelFrom: first?.level ?? 1, levelTo: character?.level ?? 1 } });
+        }
+      } catch { /* 実績の反映に失敗しても画面は出す */ }
       set({ ready: true, error: null, character, player, experiences, history, lessons, explorations, battles, talks, sanctuary, research });
     } catch (e) { set({ ready: true, error: e instanceof Error ? e.message : "読み込めませんでした" }); }
   },

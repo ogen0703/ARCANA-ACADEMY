@@ -10,6 +10,7 @@ import { research as researchCompound } from "../../game/academy/compound";
 import { meetSevenstar, readScene, setOutfit, type StoryCtx } from "../../game/story/engine";
 import { timeOf } from "../../game/world/ambience";
 import { brew, flowerbed, walkGarden } from "../../game/academy/potions";
+import { syncProgress, type Logs } from "../../game/academy/progress";
 import { applyExploration, claimTeacherQuest, claimWeekly, makeWand, type Step } from "../../game/academy/exploreEngine";
 import type { MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -95,7 +96,15 @@ export async function brewPotion(id: string) {
     const ch = await getCharacter(), today = todayLocal();
     const count = ch.world.brew.date === today ? ch.world.brew.count : 0;
     const r = brew(ch, id, count, nowIso());
-    await db.characters.put(CharacterSchema.parse({ ...r.character, world: { ...r.character.world, brew: { date: today, count: count + 1 } } }));
+    await db.characters.put(CharacterSchema.parse({ ...r.character, world: { ...r.character.world, brew: { date: today, count: count + 1 }, brewLog: [...r.character.world.brewLog, { date: today, potion: id }] } }));
+    return r;
+  });
+}
+/** 実績・寮の星を反映する(読み込みのたびに。新しいものがあれば保存) */
+export async function syncAchievements(logs: Logs) {
+  return db.transaction("rw", [db.characters, db.statHistory], async () => {
+    const r = syncProgress(await getCharacter(), logs, todayLocal(), nowIso(), newId);
+    if (r.changed) { await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history); }
     return r;
   });
 }
