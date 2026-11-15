@@ -9,6 +9,7 @@ import SettingsPage from "../pages/Settings/SettingsPage";
 import AcademyPage from "../pages/Academy/AcademyPage";
 import EncyclopediaPage from "../pages/Encyclopedia/EncyclopediaPage";
 import EffectOverlay from "../components/EffectOverlay";
+import RouteBoundary from "../components/RouteBoundary";
 import DiagnosisPage from "../pages/Diagnosis/DiagnosisPage";
 import LessonsPage from "../pages/Lessons/LessonsPage";
 import LessonPage from "../pages/Lessons/LessonPage";
@@ -63,6 +64,7 @@ export default function App() {
         {!ready ? <p className="py-20 text-center text-arcane-300">学院の扉をひらいています…</p>
           : error ? <p className="py-20 text-center text-candle">データを読み込めませんでした:{error}</p>
             : (
+              <RouteBoundary>
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/character" element={<CharacterPage />} />
@@ -87,6 +89,7 @@ export default function App() {
                 <Route path="/encyclopedia" element={<EncyclopediaPage />} />
                 <Route path="*" element={<HomePage />} />
               </Routes>
+              </RouteBoundary>
             )}
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-gold-500/20 bg-night-950/95 backdrop-blur lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }} aria-label="メニュー">

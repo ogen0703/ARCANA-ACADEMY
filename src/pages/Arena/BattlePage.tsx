@@ -39,7 +39,7 @@ export default function BattlePage() {
         <div className="absolute inset-0 bg-cover bg-center opacity-45" style={{ backgroundImage: `url(${ART.arena})` }} />
         <div className="relative flex items-end gap-3">
           <div key={hit} className={`h-44 w-32 shrink-0 sm:h-52 sm:w-40 ${hit ? "battle-hit" : ""}`}>
-            <img src={ART.foe(o.id)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]" />
+            <img key={o.id} src={ART.foe(o.id)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-serif text-lg text-gold-200">{o.name}</p>

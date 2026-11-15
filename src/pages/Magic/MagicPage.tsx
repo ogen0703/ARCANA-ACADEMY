@@ -26,7 +26,7 @@ export default function MagicPage() {
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-arcane-300/70">複数の系統を組み合わせた複合魔法は Phase 5 で登場します。</p>
+        <p className="mt-3 text-xs text-arcane-300/70">違う系統の呪文を組み合わせた複合魔法は、大図書館の奥の魔法研究室で見つかります。</p>
       </Panel>
       <div className="grid content-start gap-4">
         <Panel title="呪文" right={<span className="num text-xs text-gold-200">{ch.learnedSpells.length} / {SPELLS.length}</span>}>
