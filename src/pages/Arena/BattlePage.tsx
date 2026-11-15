@@ -69,6 +69,7 @@ export default function BattlePage() {
                 </button>
               ))}
             </div>
+            {ctx.companion && <button className="rounded-lg border border-gold-400/50 bg-gold-500/10 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.companionUsed} onClick={() => act({ type: "companion" })}><span className="text-gold-200">相棒:{ctx.companion.name}</span> <span className="text-[10px] text-arcane-300">{st.companionUsed ? "(この戦闘ではもう手伝った)" : `${ctx.companion.label}${ctx.companion.mult > 1 ? ` ×${ctx.companion.mult}` : ""}`}</span></button>}
             <div className="grid grid-cols-3 gap-2">
               <button className="btn px-2 py-1.5 text-xs" onClick={() => act({ type: "staff" })}>{ch.history.wand ? "杖で打つ" : "杖で打つ(仮の杖)"}</button>
               <button className="btn px-2 py-1.5 text-xs" onClick={() => act({ type: "guard" })}>構える</button>

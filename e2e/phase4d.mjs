@@ -17,12 +17,12 @@ try {
   await p.locator("[data-npc=leon] a").click();
   await p.getByRole("button", { name: "「もう一回やろう。今度は一緒に」" }).click();
   await p.getByTestId("reply").getByText("(響いた)").waitFor();
-  if ((await p.getByTestId("trust").innerText()) !== "9") fail("信頼が9になっていない");
+  await p.waitForFunction(() => document.querySelector("[data-testid=trust]")?.textContent === "9", null, { timeout: 5000 }).catch(() => fail("信頼が9になっていない"));
   await p.screenshot({ path: `${out}/npc_talk.png`, fullPage: true });
   for (let i = 0; i < 4; i++) { await p.getByRole("button", { name: "もどる" }).click(); await p.getByRole("button", { name: /ひとこと話す/ }).click(); await p.getByTestId("reply").waitFor(); }
   await p.getByRole("button", { name: "もどる" }).click();
   await p.getByText("今日はたくさん話した").waitFor(); await p.getByTestId("talks-used").getByText("今日 5/5").waitFor();
-  if ((await p.getByTestId("trust").innerText()) !== "13") fail("ひとことで信頼が増えていない");
+  await p.waitForFunction(() => document.querySelector("[data-testid=trust]")?.textContent === "13", null, { timeout: 5000 }).catch(() => fail("ひとことで信頼が増えていない"));
   // 演習で星砂 → ヴァーレ教授へ
   await p.goto(B + "/arena/dummy");
   for (let i = 0; i < 20 && !(await p.getByTestId("battle-result").isVisible().catch(() => false)); i++) { await p.getByRole("button", { name: /杖で打つ/ }).click(); await p.waitForTimeout(50); }

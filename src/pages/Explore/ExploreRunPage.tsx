@@ -55,7 +55,7 @@ export default function ExploreRunPage() {
 
   const opt = !atEnd ? roomOptions(ch, p.id, i) : null;
   const usable = opt ? opt.spells.filter((s) => s.learned) : [];
-  const blocked = opt && !usable.length && !opt.alts.length && !opt.canSkip;
+  const blocked = opt && !usable.length && !opt.alts.length && !opt.canSkip && !opt.companion;
   return (
     <div className="mx-auto grid max-w-xl gap-4">
       <div className="relative -mb-2 aspect-[3/1] overflow-hidden rounded-2xl border border-gold-500/20">
@@ -72,6 +72,7 @@ export default function ExploreRunPage() {
           <p className="font-serif text-lg" data-testid="room-desc">{opt.room.desc}</p>
           <div className="mt-3 grid gap-2">
             {usable.map((s) => <button key={s.id} className="btn btn-primary justify-start" onClick={() => choose(s.method, `「${spellById(s.id)?.name}」で通った`)}>✧ 呪文「{spellById(s.id)?.name}」を使う</button>)}
+            {opt.companion && <button className="btn justify-start border-gold-400/50" onClick={() => choose(opt.companion!.method, opt.companion!.label)}>❦ {opt.companion.label}</button>}
             {opt.alts.map((a) => <button key={a.method} className="btn justify-start" onClick={() => choose(a.method, `${a.label}`)}>{a.label}</button>)}
             {opt.canSkip && <button className="btn justify-start" onClick={() => choose("skip", "読めないまま先へ進んだ")}>読めないまま先へ進む(発見はなし)</button>}
             {opt.spells.filter((s) => !s.learned).length > 0 && <p className="text-[11px] text-arcane-300/70">ここでは「{opt.spells.filter((s) => !s.learned).map((s) => spellById(s.id)?.name).join("」「")}」も使えそう(まだ覚えていない)</p>}

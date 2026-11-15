@@ -5,6 +5,7 @@
 import type { Character, StatKey } from "../../schemas";
 import { COURSES, spellById } from "./content";
 import { proficiencyOf } from "./engine";
+import { companionSupport } from "./creaturesEngine";
 
 export type FoeMove = "strike" | "quick" | "intimidate" | "charge" | "heavy";
 export type Opponent = { id: string; name: string; hp: number; atk: number; desc: string; shell?: boolean; pattern: FoeMove[]; good: string[]; exp: number; reward: string; title?: string };
@@ -48,8 +49,9 @@ export const MOVE_TEXT: Record<FoeMove, { clear: string; vague: string }> = {
   heavy: { clear: "ためた力を放とうとしている(大打撃)", vague: "ただならぬ気配がする" },
 };
 
-export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean };
-export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: ch.learnedSpells.filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand });
+export type Companion = NonNullable<ReturnType<typeof companionSupport>>;
+export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null };
+export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: ch.learnedSpells.filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch) });
 export const maxes = (c: Ctx) => ({ hp: Math.round(40 + c.stats.physical), mp: Math.round(20 + (c.stats.intellect + c.stats.creativity) * 0.5), sp: Math.round(20 + c.stats.spirit) });
 
 export type State = {
@@ -58,6 +60,8 @@ export type State = {
   foe: { hp: number; max: number; shell: boolean; charged: boolean; weak: number; vines: number; netted: boolean; step: number };
   buff: { mult: number; shield: number; dodge: boolean };
   stunned: boolean; reveal: number; log: string[]; over: null | "win" | "lose" | "draw" | "retreat";
+  /** 相棒の手助けは1戦に1回 */
+  companionUsed?: boolean;
 };
 
 const rnd = (s: State) => { s.seed = (s.seed * 1103515245 + 12345) >>> 0; return (s.seed % 1000) / 1000; };
@@ -77,7 +81,7 @@ function spellDamage(c: Ctx, id: string, base: number) {
   return base * (1 + c.stats[statFor[sys]] / 100) * (1 + (c.prof[sys] ?? 0) / 200);
 }
 
-export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" };
+export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" } | { type: "companion" };
 /** 1ターン進める(元の State は変えない) */
 export function step(prev: State, c: Ctx, cmd: Command): State {
   if (prev.over) return prev;
@@ -99,6 +103,23 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
   const myAction = () => {
     if (s.stunned) { s.stunned = false; say("心が揺れて、動けなかった。"); return; }
     if (cmd.type === "staff") { hitFoe((c.wand ? BATTLE.staffWand : BATTLE.staff) * (1 + c.stats.physical / 100)); return; }
+    if (cmd.type === "companion") {
+      const cp = c.companion;
+      if (!cp) throw new Error("相棒がいない");
+      if (s.companionUsed) throw new Error("相棒の手助けは1戦に1回");
+      s.companionUsed = true;
+      say(`相棒の${cp.name}が手を貸した!`);
+      switch (cp.kind) {
+        case "light": s.buff.mult = 1.5; say("弱点が照らし出された(次の攻撃1.5倍)。"); break;
+        case "calm": s.me.sp = Math.min(s.max.sp, s.me.sp + Math.round(cp.power * cp.mult)); say("心が整った。"); break;
+        case "shield": s.buff.shield = Math.round(cp.power * cp.mult); say("小さな盾ができた。"); break;
+        case "heal": s.me.hp = Math.min(s.max.hp, s.me.hp + Math.round(cp.power * cp.mult)); say("体力を分けてもらった。"); break;
+        case "attack": hitFoe(cp.power * cp.mult * (1 + c.stats.bond / 100)); break;
+        case "unseal": if (s.foe.shell || s.foe.charged) { s.foe.shell = false; s.foe.charged = false; say("硬い殻とためた力が解けた。"); } else say("解くものはなかった。"); break;
+        case "net": s.foe.netted = true; say(`風が${o.name}の動きを止めた。`); break;
+      }
+      return;
+    }
     if (cmd.type === "guard") { guard = true; s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.guardMp); s.me.sp = Math.min(s.max.sp, s.me.sp + BATTLE.guardSp); say("構えて、息を整えた。"); return; }
     const fx = SPELL_FX[cmd.id];
     if (!fx || !c.spells.includes(cmd.id)) throw new Error("その呪文は使えません");

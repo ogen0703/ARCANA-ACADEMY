@@ -12,6 +12,9 @@ import { Panel } from "../../components/ui";
 import { spellById } from "../../game/academy/content";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
+import { CREATURES } from "../../game/academy/creatures";
+import { recOf } from "../../game/academy/creaturesEngine";
+import { materialById } from "../../game/academy/explore";
 import { episodesOf, trustOf } from "../../game/academy/npcEngine";
 import { Link } from "react-router-dom";
 
@@ -135,12 +138,19 @@ function MagicBook() {
   );
 }
 
-const Empty = ({ text }: { text: string }) => (
-  <div className="grid place-items-center gap-2 py-10 text-center">
-    <span className="font-serif text-5xl text-arcane-300/30" aria-hidden="true">？</span>
-    <p className="max-w-sm text-sm text-arcane-300">{text}</p>
-  </div>
-);
+function CreatureBook() {
+  const { character: ch } = useGame();
+  if (!ch) return null;
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2" data-testid="creature-book">
+      {CREATURES.map((c) => {
+        const r = recOf(ch, c.id);
+        return <li key={c.id} className={`rounded-xl border p-3 ${r.friend ? "border-gold-400/40 bg-gold-500/10" : "border-arcane-500/15"}`}>{r.friend || r.attempts ? <><p className="font-serif text-gold-200">{c.name} <span className="text-[11px] text-arcane-300">{MAGIC_LABELS[c.system].name}</span></p><p className="text-xs">{c.desc}</p><p className="mt-1 text-[11px] text-arcane-300">{r.friend ? `仲間 ・ なつき ${r.affection} ・ 好物:${materialById(c.favorite)?.name}` : `出会った(${r.attempts}回)・まだ仲間ではない`}</p></> : <p className="text-sm text-arcane-300/50">？？？(まだ出会っていない)</p>}</li>;
+      })}
+      <li className="rounded-xl border border-arcane-500/15 p-3"><p className="text-sm text-arcane-300/50">？？？(物語の中で出会う)</p></li>
+    </ul>
+  );
+}
 
 function PeopleBook() {
   const { character: ch } = useGame();
@@ -202,7 +212,7 @@ export default function EncyclopediaPage() {
         {tab === "timeline" && <Timeline />}
         {tab === "magic" && <MagicBook />}
         {tab === "people" && <PeopleBook />}
-        {tab === "creatures" && <Empty text="まだ出会った魔法生物はいない。魔法生物保護区がひらく Phase 5 から記録されます。" />}
+        {tab === "creatures" && <CreatureBook />}
         {tab === "explore" && <ExploreBook />}
       </div>
     </Panel>

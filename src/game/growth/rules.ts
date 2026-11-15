@@ -66,6 +66,13 @@ export const P = {
   talksPerDay: 5, // 1人あたり。1回目は話題つき、2回目からはひとこと
   trustHit: 8, trustOther: 4, trustResonate: 10, trustChat: 1, trustGiftLiked: 10, trustGift: 3,
   trustLessonStage: 40, trustLessonMult: 1.2, trustTitle: 70,
+  // ---- Phase 5a 魔法生物と相棒(世界設定書で承認)----
+  sanctuaryPerDay: 3, approachesPerVisit: 3,
+  distanceStart: 10, distanceAffinity: 2, distancePersonality: 1, distanceCarryMax: 3,
+  approachLiked: 4, approachOffer: 4, approachSpell: 3, approachOther: 1,
+  feedAffection: 8, playAffection: 3, playsPerDay: 2,
+  realAffection: 2, realAffectionMax: 6,
+  companionStageMult: [1, 1.2, 1.5],
 };
 
 /** 次のレベルまでに必要な経験値(レベルLからL+1) */

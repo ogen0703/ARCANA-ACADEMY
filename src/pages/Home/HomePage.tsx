@@ -14,6 +14,7 @@ const SHORTCUTS = [
   { to: "/explore", name: "探索", desc: "呪文で遺跡の道をひらく" },
   { to: "/arena", name: "演習場", desc: "呪文で演習の相手と戦う" },
   { to: "/lounge", name: "談話室", desc: "先生や仲間と話す" },
+  { to: "/sanctuary", name: "保護区", desc: "魔法生物と相棒" },
   { to: "/quests", name: "クエスト", desc: "杖えらび・課題・称号" },
   { to: "/magic", name: "魔法", desc: "適性と覚えた呪文" },
   { to: "/encyclopedia", name: "図鑑", desc: "成長レポート・年表" },

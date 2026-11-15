@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { BattleLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, MagicKey, PlayerProfile, StatHistory } from "../schemas";
+import type { BattleLog, SanctuaryLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, MagicKey, PlayerProfile, StatHistory } from "../schemas";
 import { spellById } from "../game/academy/content";
 
 /** 承認・レベルアップの演出(表示だけ。数値は rule engine が決める) */
@@ -10,7 +10,7 @@ import { checkInbox, type InboxResult } from "../services/inbox";
 type State = {
   ready: boolean; error: string | null;
   character: Character | null; player: PlayerProfile | null;
-  experiences: ExperienceEvent[]; history: StatHistory[]; lessons: LessonLog[]; explorations: ExploreLog[]; battles: BattleLog[]; talks: TalkLog[];
+  experiences: ExperienceEvent[]; history: StatHistory[]; lessons: LessonLog[]; explorations: ExploreLog[]; battles: BattleLog[]; talks: TalkLog[]; sanctuary: SanctuaryLog[];
   /** 授業を1コマ受ける。新しい呪文を覚えたら演出を出す */
   lesson: (course: MagicKey, unit: number, correct: boolean) => Promise<{ prof: number; exp: number; repeat: boolean; learned: string[] }>;
   load: () => Promise<void>;
@@ -24,12 +24,12 @@ type State = {
 };
 
 export const useGame = create<State>((set, get) => ({
-  ready: false, error: null, character: null, player: null, experiences: [], history: [], lessons: [], explorations: [], battles: [], talks: [],
+  ready: false, error: null, character: null, player: null, experiences: [], history: [], lessons: [], explorations: [], battles: [], talks: [], sanctuary: [],
   load: async () => {
     try {
       await repo.ensureInitialized();
-      const [character, player, experiences, history, lessons, explorations, battles, talks] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks()]);
-      set({ ready: true, error: null, character, player, experiences, history, lessons, explorations, battles, talks });
+      const [character, player, experiences, history, lessons, explorations, battles, talks, sanctuary] = await Promise.all([repo.getCharacter(), repo.getPlayer(), repo.listExperiences(), repo.listHistory(), repo.listLessons(), repo.listExplorations(), repo.listBattles(), repo.listTalks(), repo.listSanctuary()]);
+      set({ ready: true, error: null, character, player, experiences, history, lessons, explorations, battles, talks, sanctuary });
     } catch (e) { set({ ready: true, error: e instanceof Error ? e.message : "読み込めませんでした" }); }
   },
   /** 保存処理を実行して、画面のデータを読み直す */

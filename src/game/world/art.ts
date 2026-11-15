@@ -15,6 +15,9 @@ export const ART = {
   /** 演習の相手 */
   foe: (k: string) => (k === "teacher" ? `${base}art/teacher-elemental.webp` : `${base}art/foe-${k}.webp`),
   arena: `${base}art/arena.webp`,
+  sanctuary: `${base}art/sanctuary.webp`,
+  /** 魔法生物(幼体・若体は young、成体は通常の絵) */
+  creature: (id: string, stage: number) => (stage >= 2 ? [`${base}art/creature-${id}.webp`] : [`${base}art/creature-${id}-young.webp`, `${base}art/creature-${id}.webp`]),
   /** 学院の人たち(先生は授業の立ち絵) */
   npc: (id: string) => (id.startsWith("t-") ? `${base}art/teacher-${id.slice(2)}.webp` : `${base}art/npc-${id}.webp`),
 };

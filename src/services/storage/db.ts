@@ -1,9 +1,9 @@
 import Dexie, { type Table } from "dexie";
-import type { BattleLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, PlayerProfile, StatHistory } from "../../schemas";
+import type { BattleLog, SanctuaryLog, TalkLog, Character, ExperienceEvent, ExploreLog, LessonLog, PlayerProfile, StatHistory } from "../../schemas";
 import { houseFor } from "../../game/academy/content";
 import { migrateCharacterV3 } from "./migrations";
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 export class ArcanaDB extends Dexie {
   player!: Table<PlayerProfile, string>;
@@ -15,6 +15,7 @@ export class ArcanaDB extends Dexie {
   exploreLog!: Table<ExploreLog, string>;
   battleLog!: Table<BattleLog, string>;
   talkLog!: Table<TalkLog, string>;
+  sanctuaryLog!: Table<SanctuaryLog, string>;
   constructor(name = "arcana-academy") {
     super(name);
     // データ構造を変えるときは version(2) を足して .upgrade() で移行する(既存データを消さない)
@@ -53,6 +54,10 @@ export class ArcanaDB extends Dexie {
     // v7(Phase 4d):交流の記録。world.npcTopics / answers は読み込み時に既定値で補う
     this.version(7).stores({ talkLog: "id, at, date, npc" }).upgrade(async (tx) => {
       await tx.table("meta").put({ key: "schemaVersion", value: 7 });
+    });
+    // v8(Phase 5a):保護区の記録。world.creatures などは読み込み時に既定値で補う
+    this.version(8).stores({ sanctuaryLog: "id, at, date, creature" }).upgrade(async (tx) => {
+      await tx.table("meta").put({ key: "schemaVersion", value: 8 });
     });
   }
 }

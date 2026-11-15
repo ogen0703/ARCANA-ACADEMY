@@ -95,7 +95,11 @@ export const CharacterSchema = z.object({
     /** 学院の人たち(Phase 4d):次の話題の番号と、選んだ答えの記録(物語で参照。性格の値には使わない) */
     npcTopics: z.record(z.string(), z.number().int().min(0)).default({}),
     answers: z.array(z.string()).default([]),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [] }),
+    /** 魔法生物(Phase 5a):仲間か・出会った回数・なつき度、相棒、現実の経験で相棒が育った量(1日) */
+    creatures: z.record(z.string(), z.object({ friend: z.boolean(), attempts: z.number().int().min(0), affection: z.number().min(0).max(100) })).default({}),
+    companion: z.string().nullable().default(null),
+    companionDaily: z.object({ date: z.string(), gained: z.number().min(0) }).default({ date: "", gained: 0 }),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 } }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -216,6 +220,18 @@ export const TalkLogSchema = z.object({
 });
 export type TalkLog = z.infer<typeof TalkLogSchema>;
 
+/* ---------- 保護区の記録(Phase 5a) ---------- */
+export const SanctuaryLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  kind: z.enum(["visit", "feed", "play"]),
+  creature: z.string(),
+  result: z.enum(["friend", "left", ""]).default(""),
+  actions: z.array(z.string()).default([]),
+});
+export type SanctuaryLog = z.infer<typeof SanctuaryLogSchema>;
+
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
   app: z.literal("arcana-academy"),
@@ -229,6 +245,7 @@ export const ExportSchema = z.object({
   exploreLog: z.array(ExploreLogSchema).default([]),
   battleLog: z.array(BattleLogSchema).default([]),
   talkLog: z.array(TalkLogSchema).default([]),
+  sanctuaryLog: z.array(SanctuaryLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 
