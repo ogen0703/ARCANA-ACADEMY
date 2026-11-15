@@ -4,6 +4,7 @@ import type { TimeKey, WeatherKey } from "../world/ambience";
 import { P } from "../growth/rules";
 import { APPROACHES, CREATURES, creatureById, stageIndex, type Creature } from "./creatures";
 import { materialById } from "./explore";
+import { potionCount, takePotion } from "./potions";
 
 export const recOf = (ch: Character, id: string) => ch.world.creatures[id] ?? { friend: false, attempts: 0, affection: 0 };
 export const qtyOf = (ch: Character, id: string) => ch.inventory.find((i) => i.id === id)?.qty ?? 0;
@@ -37,7 +38,9 @@ export function approachOptions(ch: Character, c: Creature) {
   const spells = ch.learnedSpells.filter((s) => ["astral-1", "mind-1", "nature-1", "creation-1", "elemental-1", "ancient-1", "mind-2"].includes(s)).map((s) => ({ action: `spell:${s}`, label: "", ok: true }));
   // 古き声の通訳(複合魔法):古代の生き物には呪文と同じだけ効く
   const old = ch.world.compounds.includes("c-oldvoice") ? [{ action: "spell:c-oldvoice", label: "", ok: true }] : [];
-  return [...base, ...spells, ...old];
+  // 魔法薬(Phase 6a):好物の練り餌・安らぎの香
+  const potions = [{ action: "potion:bait", label: "", ok: potionCount(ch.inventory, "bait") > 0 }, { action: "potion:calm", label: "", ok: potionCount(ch.inventory, "calm") > 0 }].filter((x) => x.ok);
+  return [...base, ...spells, ...old, ...potions];
 }
 
 /** 1つの近づき方で、心の距離がどれだけ縮まるか(同じ近づき方の2回目は半分) */
@@ -45,7 +48,7 @@ export function approachValue(c: Creature, action: string, used: string[]) {
   const [kind, arg] = action.split(":");
   let v = P.approachOther;
   if (kind === c.likes) v = P.approachLiked;
-  else if (kind === "offer") v = P.approachOffer;
+  else if (kind === "offer" || action === "potion:bait") v = P.approachOffer;
   else if (kind === "spell" && (c.spells.includes(arg) || (arg === "c-oldvoice" && c.system === "ancient"))) v = P.approachSpell;
   return used.includes(action) ? Math.floor(v / 2) : v;
 }
@@ -55,11 +58,15 @@ export const reaction = (v: number) => (v >= 4 ? "うれしそうに近づいて
 export function visit(ch: Character, input: { creature: string; actions: string[]; visitsToday: number }, now: string) {
   const c = creatureById(input.creature); if (!c) throw new Error("その生物はいません");
   if (input.visitsToday >= P.sanctuaryPerDay) throw new Error(`今日はもう${P.sanctuaryPerDay}回訪れた。また明日`);
-  if (input.actions.length < 1 || input.actions.length > P.approachesPerVisit) throw new Error("近づき方は1〜3つ");
+  // 安らぎの香は近づき方の数に入れず、最初の心の距離を-2にする
+  const calm = input.actions.includes("potion:calm");
+  const acts = input.actions.filter((a) => a !== "potion:calm");
+  if (acts.length < 1 || acts.length > P.approachesPerVisit || input.actions.filter((a) => a === "potion:calm").length > 1) throw new Error("近づき方は1〜3つ");
   if (recOf(ch, c.id).friend) throw new Error("もう仲間になっている");
   const opts = approachOptions(ch, c);
-  let d = startDistance(ch, c); const used: string[] = []; let inv = ch.inventory; const reactions: string[] = [];
-  for (const a of input.actions) {
+  let d = startDistance(ch, c) - (calm ? 2 : 0); const used: string[] = []; let inv = ch.inventory; const reactions: string[] = [];
+  if (calm) { if (potionCount(inv, "calm") < 1) throw new Error("安らぎの香を持っていない"); inv = takePotion(inv, "calm").inv; }
+  for (const a of acts) {
     if (d <= 0) throw new Error("記録が正しくありません");
     const o = opts.find((x) => x.action === a);
     if (!o || !o.ok) throw new Error("その近づき方はできない");
@@ -68,6 +75,7 @@ export function visit(ch: Character, input: { creature: string; actions: string[
       if (q < 1) throw new Error("好物を持っていない");
       inv = inv.map((i) => (i.id === c.favorite ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0);
     }
+    if (a === "potion:bait") { if (potionCount(inv, "bait") < 1) throw new Error("練り餌がもうない"); inv = takePotion(inv, "bait").inv; }
     const v = approachValue(c, a, used); used.push(a); d -= v; reactions.push(reaction(v));
   }
   const friend = d <= 0;

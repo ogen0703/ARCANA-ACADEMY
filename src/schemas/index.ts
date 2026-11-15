@@ -113,7 +113,10 @@ export const CharacterSchema = z.object({
     }).default({ scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }),
     /** 着ている衣装(rank=位の装い / house=寮の正装 / starheir=星継ぎの装い) */
     outfit: z.enum(["rank", "house", "starheir"]).default("rank"),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank" }),
+    /** 星影の庭園(Phase 6a):最後に歩いた日・休息した日 / 魔法薬研究棟:今日の調合の回数 */
+    garden: z.object({ lastWalk: z.string().default(""), restDate: z.string().default("") }).default({ lastWalk: "", restDate: "" }),
+    brew: z.object({ date: z.string().default(""), count: z.number().int().min(0).default(0) }).default({ date: "", count: 0 }),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank", garden: { lastWalk: "", restDate: "" }, brew: { date: "", count: 0 } }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 

@@ -5,14 +5,16 @@ import type { MagicKey } from "../../schemas";
 
 export type Material = { id: string; name: string; use: string };
 export const MATERIALS: Material[] = [
-  { id: "stardust", name: "星砂", use: "星辰系の魔法薬(予定)" },
-  { id: "glowmoss", name: "光る苔", use: "癒やしの魔法薬(予定)" },
+  { id: "stardust", name: "星砂", use: "魔法薬(星砂の霊薬・浮き足の薬・好物の練り餌)" },
+  { id: "glowmoss", name: "光る苔", use: "魔法薬(癒やしの水薬・灯りの香油・浮き足の薬・安らぎの香)" },
   { id: "starshard", name: "星の欠片", use: "杖や装飾品の錬成" },
-  { id: "candlestand", name: "古びた燭台", use: "寮の部屋の飾り(予定)" },
+  { id: "candlestand", name: "古びた燭台", use: "魔法薬(灯りの香油)" },
   { id: "staremblem", name: "古い星の紋章", use: "物語の鍵" },
-  { id: "violetink", name: "紫のインク", use: "古代文字の写し(予定)" },
-  { id: "oldpaper", name: "古紙片", use: "封印の研究(予定)" },
+  { id: "violetink", name: "紫のインク", use: "魔法薬(月光の気付け薬)" },
+  { id: "oldpaper", name: "古紙片", use: "魔法薬(守りの香油)" },
   { id: "oldcodex", name: "古い写本", use: "物語の鍵" },
+  { id: "sunherb", name: "陽だまり草", use: "魔法薬の材料(星影の庭園で朝・昼に摘める)" },
+  { id: "moonherb", name: "月光草", use: "魔法薬の材料(星影の庭園で夕方・夜に摘める)" },
 ];
 export const materialById = (id: string) => MATERIALS.find((m) => m.id === id);
 

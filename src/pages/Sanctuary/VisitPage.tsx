@@ -18,16 +18,18 @@ export default function VisitPage() {
   const [lines, setLines] = useState<string[]>([]);
   const [done, setDone] = useState<null | { friend: boolean }>(null);
   const [err, setErr] = useState("");
+  const [calm, setCalm] = useState(false);
   if (!ch || !cr) return null;
   const known = recOf(ch, cr.id).attempts > 0 || recOf(ch, cr.id).friend;
   if (recOf(ch, cr.id).friend && !done) {
     return <Panel title={cr.name}><p className="text-sm">仲間の{cr.name}が、うれしそうに駆け寄ってきた。</p><Link to="/sanctuary" className="btn mt-3 inline-block">保護区へ</Link></Panel>;
   }
-  const opts = approachOptions(ch, cr);
-  let d = startDistance(ch, cr); const used: string[] = [];
+  const opts = approachOptions(ch, cr).filter((o) => o.action !== "potion:calm");
+  const canCalm = approachOptions(ch, cr).some((o) => o.action === "potion:calm");
+  let d = startDistance(ch, cr) - (calm ? 2 : 0); const used: string[] = [];
   for (const a of actions) { d -= approachValue(cr, a, used); used.push(a); }
   const finish = async (list: string[]) => {
-    try { let r: Awaited<ReturnType<typeof visitSanctuary>> | null = null; await run(async () => { r = await visitSanctuary(cr.id, list); }); setDone({ friend: r!.friend }); }
+    try { let r: Awaited<ReturnType<typeof visitSanctuary>> | null = null; await run(async () => { r = await visitSanctuary(cr.id, calm ? ["potion:calm", ...list] : list); }); setDone({ friend: r!.friend }); }
     catch (e) { setErr(e instanceof Error ? e.message : "うまくいきませんでした"); }
   };
   const choose = (a: string) => {
@@ -35,7 +37,7 @@ export default function VisitPage() {
     setActions(list); setLines((l) => [...l, reaction(v)]);
     if (d - v <= 0 || list.length >= P.approachesPerVisit) finish(list);
   };
-  const label = (o: { action: string; label: string }) => (o.action.startsWith("spell:") ? `呪文「${magicName(o.action.slice(6))}」を使う` : o.label);
+  const label = (o: { action: string; label: string }) => (o.action === "potion:bait" ? "好物の練り餌を差し出す" : o.action.startsWith("spell:") ? `呪文「${magicName(o.action.slice(6))}」を使う` : o.label);
   return (
     <div className="mx-auto grid max-w-xl gap-4">
       <div className="panel relative overflow-hidden p-4 text-center">
@@ -59,6 +61,7 @@ export default function VisitPage() {
           </div>
         ) : (
           <div className="grid gap-2">
+            {canCalm && !actions.length && (calm ? <p className="text-xs text-gold-200">安らぎの香がただよっている(心の距離が近くなった)</p> : <button className="btn justify-start border-arcane-400/50 text-sm" data-testid="calm" onClick={() => setCalm(true)}>⚗ 安らぎの香を焚く(近づき方の数には入らない)</button>)}
             {opts.filter((o) => o.ok).map((o) => <button key={o.action} className={`btn justify-start text-sm ${o.action.startsWith("spell:") ? "border-gold-400/50" : ""}`} onClick={() => choose(o.action)}>{label(o)}</button>)}
             {actions.length > 0 && <button className="btn-ghost rounded px-2 text-left text-xs text-arcane-300" onClick={() => finish(actions)}>そっと離れる</button>}
             {actions.length === 0 && <Link to="/sanctuary" className="text-xs text-arcane-300">近づかずに戻る(回数は使わない)</Link>}

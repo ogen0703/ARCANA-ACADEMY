@@ -5,6 +5,8 @@
 import type { Character, StatKey } from "../../schemas";
 import { COURSES } from "./content";
 import { magicName, magicSystem } from "./compound";
+import { POTIONS, potionById, potionCount, potionItemId, qty as invQty, takePotion } from "./potions";
+import { todayLocal } from "../../utils/id";
 import { proficiencyOf } from "./engine";
 import { companionSupport } from "./creaturesEngine";
 
@@ -62,9 +64,12 @@ export const MOVE_TEXT: Record<FoeMove, { clear: string; vague: string }> = {
 };
 
 export type Companion = NonNullable<ReturnType<typeof companionSupport>>;
-export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null; awaken?: boolean };
-export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: [...ch.learnedSpells, ...ch.world.compounds].filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch), awaken: ch.world.companion === "sevenstar" && (ch.world.creatures.sevenstar?.affection ?? 0) >= 80 });
-export const maxes = (c: Ctx) => ({ hp: Math.round(40 + c.stats.physical), mp: Math.round(20 + (c.stats.intellect + c.stats.creativity) * 0.5), sp: Math.round(20 + c.stats.spirit) });
+export type Ctx = { stats: Character["basicStats"]; spells: string[]; prof: Record<string, number>; wand: boolean; companion?: Companion | null; awaken?: boolean; potions?: Record<string, { n: number; fine: boolean }>; rested?: boolean };
+export const ctxOf = (ch: Character): Ctx => ({ stats: ch.basicStats, spells: [...ch.learnedSpells, ...ch.world.compounds].filter((s) => SPELL_FX[s]), prof: Object.fromEntries(Object.keys(COURSES).map((k) => [k, proficiencyOf(ch, k as never)])), wand: !!ch.history.wand, companion: companionSupport(ch), awaken: ch.world.companion === "sevenstar" && (ch.world.creatures.sevenstar?.affection ?? 0) >= 80,
+  potions: Object.fromEntries(POTIONS.filter((p) => p.use === "battle" && potionCount(ch.inventory, p.id) > 0).map((p) => [p.id, { n: potionCount(ch.inventory, p.id), fine: invQty(ch.inventory, potionItemId(p.id, true)) > 0 }])),
+  rested: ch.world.garden.restDate === todayLocal() });
+const REST = 1.1; // 星影の庭園で休んだ日は最大値+10%(Phase 6a)
+export const maxes = (c: Ctx) => { const m = c.rested ? REST : 1; return { hp: Math.round((40 + c.stats.physical) * m), mp: Math.round((20 + (c.stats.intellect + c.stats.creativity) * 0.5) * m), sp: Math.round((20 + c.stats.spirit) * m) }; };
 
 export type State = {
   opp: string; turn: number; seed: number;
@@ -78,6 +83,8 @@ export type State = {
   regen?: number;
   /** 星継ぎの覚醒(1戦1回、残りターン) */
   awaken?: number; awakenUsed?: boolean;
+  /** 魔法薬(1戦1回) */
+  potionUsed?: boolean;
 };
 
 const rnd = (s: State) => { s.seed = (s.seed * 1103515245 + 12345) >>> 0; return (s.seed % 1000) / 1000; };
@@ -98,7 +105,7 @@ function spellDamage(c: Ctx, id: string, base: number) {
 }
 const P_AWAKEN = { turns: 3, mult: 1.5 };
 
-export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" } | { type: "companion" } | { type: "awaken" };
+export type Command = { type: "spell"; id: string } | { type: "staff" } | { type: "guard" } | { type: "retreat" } | { type: "companion" } | { type: "awaken" } | { type: "potion"; id: string };
 /** 1ターン進める(元の State は変えない) */
 export function step(prev: State, c: Ctx, cmd: Command): State {
   if (prev.over) return prev;
@@ -136,6 +143,18 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
         case "net": s.foe.netted = true; say(`風が${o.name}の動きを止めた。`); break;
         case "blessing": s.buff.dodge = true; s.buff.mult = 1.5; say("星の加護に包まれた(次の痛手を防ぎ、次の攻撃1.5倍)。"); break;
       }
+      return;
+    }
+    if (cmd.type === "potion") {
+      const have = c.potions?.[cmd.id], p = potionById(cmd.id);
+      if (!have || !p?.battle) throw new Error("その魔法薬を持っていない");
+      if (s.potionUsed) throw new Error("魔法薬は1戦に1回");
+      s.potionUsed = true; const q = have.fine ? 1.5 : 1, b = p.battle;
+      say(`${p.name}${have.fine ? "(上質)" : ""}を飲んだ。`);
+      if (b.hp) { s.me.hp = Math.min(s.max.hp, s.me.hp + Math.round(b.hp * q)); say(`体力+${Math.round(b.hp * q)}。`); }
+      if (b.sp) { s.me.sp = Math.min(s.max.sp, s.me.sp + Math.round(b.sp * q)); say(`精神力+${Math.round(b.sp * q)}。`); }
+      if (b.mp) { s.me.mp = Math.min(s.max.mp, s.me.mp + Math.round(b.mp * q)); say(`魔力+${Math.round(b.mp * q)}。`); }
+      if (b.shield) { s.buff.shield = Math.round(b.shield * q); say(`香油が身を包んだ(次の痛手-${Math.round(b.shield * q)})。`); }
       return;
     }
     if (cmd.type === "awaken") {
@@ -250,6 +269,9 @@ export function applyBattle(ch: Character, input: { id: string; opp: string; see
   let c: Character = ch; let exp = 0; let rewarded = false;
   const titles: string[] = [];
   const addTitle = (name: string) => { if (!c.titles.some((t) => t.name === name)) { c = { ...c, titles: [...c.titles, { id: `t-${c.titles.length + 1}`, name, at: now }] }; titles.push(name); } };
+  // 飲んだ魔法薬を持ち物から減らす(上質から)
+  const drank = input.cmds.find((x) => x.type === "potion") as { type: "potion"; id: string } | undefined;
+  if (drank) c = { ...c, inventory: takePotion(c.inventory, drank.id).inv };
   if (s.over === "win") {
     if (!c.world.defeated.length) addTitle(FIRST_WIN_TITLE);
     if (!c.world.defeated.includes(o.id)) c = { ...c, world: { ...c.world, defeated: [...c.world.defeated, o.id] } };

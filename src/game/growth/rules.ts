@@ -73,6 +73,9 @@ export const P = {
   sevenstarReal: 3, sevenstarRealMax: 9, // 現実の経験で+3(1日最大+9)
   awakenTurns: 3, awakenMult: 1.5, // 覚醒:3ターン、呪文の魔力半分・威力1.5倍
   houseFormalTrust: 70, // 寮の正装:自分の寮の仲間の信頼70
+  // ---- Phase 6a 魔法薬研究棟と星影の庭園(世界設定書で承認)----
+  brewPerDay: 2, brewProf: 2, brewFineProf: 100, potionMax: 5, fineMult: 1.5, // 調合
+  gardenAffection: 2, gardenBloomsForTwo: 7, restMult: 1.1, // 庭を歩く
   // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
   explorePerDay: 2,
   exploreExpPerRoom: 2, exploreExpMax: 10,

@@ -9,7 +9,7 @@ export const ART = {
   hero: `${base}art/hero.webp`,
   /** 位ごとの立ち絵(Phase 5b)。無ければ hero.webp */
   heroRank: (r: number) => (r <= 0 ? `${base}art/hero.webp` : `${base}art/hero-${r === 1 ? "mage" : "archmage"}.webp`),
-  areas: { academy: `${base}art/area-academy.webp`, library: `${base}art/area-library.webp`, archive: `${base}art/place-archive.webp`, sanctuary: `${base}art/sanctuary.webp`, arena: `${base}art/arena.webp`, ruins: `${base}art/place-temple.webp` } as Record<string, string>,
+  areas: { academy: `${base}art/area-academy.webp`, library: `${base}art/area-library.webp`, archive: `${base}art/place-archive.webp`, sanctuary: `${base}art/sanctuary.webp`, arena: `${base}art/arena.webp`, ruins: `${base}art/place-temple.webp`, potions: `${base}art/area-potions.webp`, garden: `${base}art/area-garden.webp` } as Record<string, string>,
   /** 先生の立ち絵(透過) */
   teacher: (k: string) => `${base}art/teacher-${k}.webp`,
   /** 探索の場所 */

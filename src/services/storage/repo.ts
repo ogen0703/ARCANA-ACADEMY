@@ -9,6 +9,7 @@ import { gift as giftTo, receive as receiveFromNpc, talk as talkWith } from "../
 import { research as researchCompound } from "../../game/academy/compound";
 import { meetSevenstar, readScene, setOutfit, type StoryCtx } from "../../game/story/engine";
 import { timeOf } from "../../game/world/ambience";
+import { brew, flowerbed, walkGarden } from "../../game/academy/potions";
 import { applyExploration, claimTeacherQuest, claimWeekly, makeWand, type Step } from "../../game/academy/exploreEngine";
 import type { MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
@@ -75,6 +76,26 @@ export async function meetStar(actions: string[]) {
   return db.transaction("rw", [db.characters, db.statHistory, db.talkLog, db.experiences, db.sanctuaryLog], async () => {
     const r = meetSevenstar(await getCharacter(), { id: newId(), actions }, await storyCtx(), nowIso(), newId);
     await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
+    return r;
+  });
+}
+/** 星影の庭園を歩く(1日1回) */
+export async function walkInGarden() {
+  return db.transaction("rw", [db.characters, db.experiences], async () => {
+    const today = todayLocal(), t = timeOf(new Date());
+    const blooms = flowerbed(await db.experiences.toArray(), today.slice(0, 7)).length;
+    const r = walkGarden(await getCharacter(), { today, daytime: t === "dawn" || t === "day", bloomsThisMonth: blooms }, nowIso());
+    await db.characters.put(CharacterSchema.parse(r.character));
+    return r;
+  });
+}
+/** 魔法薬を調合する(1日2回) */
+export async function brewPotion(id: string) {
+  return db.transaction("rw", [db.characters], async () => {
+    const ch = await getCharacter(), today = todayLocal();
+    const count = ch.world.brew.date === today ? ch.world.brew.count : 0;
+    const r = brew(ch, id, count, nowIso());
+    await db.characters.put(CharacterSchema.parse({ ...r.character, world: { ...r.character.world, brew: { date: today, count: count + 1 } } }));
     return r;
   });
 }

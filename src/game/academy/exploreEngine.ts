@@ -5,6 +5,7 @@ import { addExp } from "../growth/engine";
 import { learnSpells, unitCounts } from "./engine";
 import { companionCanPass } from "./creaturesEngine";
 import { knows } from "./compound";
+import { POTIONS, potionCount, takePotion } from "./potions";
 import { creatureById } from "./creatures";
 import { DISCOVERIES, MATERIALS, PLACES, TEACHER_QUESTS, TITLES, WAND_WOOD, WEEKLY_QUESTS, materialById, placeById, type Place, type WeeklyQuest } from "./explore";
 
@@ -34,6 +35,7 @@ export function roomOptions(ch: Character, placeId: string, roomIdx: number) {
     spells: room.spells.map((id) => ({ id, method: `spell:${id}`, learned: knows(ch, id) })),
     alts: room.alts.map((label, i) => ({ label, method: `alt:${i}` })),
     canSkip: !!room.passWithout,
+    potions: POTIONS.filter((p) => p.use === "explore" && p.rooms?.includes(room.id) && potionCount(ch.inventory, p.id) > 0).map((p) => ({ method: `potion:${p.id}`, label: `${p.name}を使う(×${potionCount(ch.inventory, p.id)})` })),
     companion: companionCanPass(ch, room.id) ? { method: `companion:${ch.world.companion}`, label: `相棒の${creatureById(ch.world.companion!)!.name}に${creatureById(ch.world.companion!)!.explore.label}` } : null,
   };
 }
@@ -55,6 +57,11 @@ export function applyExploration(ch: Character, input: { id: string; place: stri
     if (kind === "spell") { if (!room.spells.includes(arg) || !knows(ch, arg)) throw new Error("その呪文は使えません"); ok = true; }
     else if (kind === "alt") { if (!(Number(arg) >= 0 && Number(arg) < room.alts.length)) throw new Error("その方法は選べません"); ok = true; }
     else if (kind === "companion") { if (arg !== ch.world.companion || !companionCanPass(ch, room.id)) throw new Error("相棒はここでは手伝えない"); ok = true; }
+    else if (kind === "potion") {
+      const p = POTIONS.find((x) => x.id === arg);
+      if (!p || p.use !== "explore" || !p.rooms?.includes(room.id)) throw new Error("その魔法薬はここでは使えない");
+      inv = takePotion(inv, p.id).inv; ok = true;
+    }
     else if (kind === "skip") { if (!room.passWithout) throw new Error("この部屋は素通りできません"); }
     else throw new Error("方法が正しくありません");
     if (i < input.steps.length - 1 && !ok && !room.passWithout) throw new Error("通れない部屋の先には進めません");

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { SPELL_FX, ctxOf, fxLabel, hint, opponentById, startBattle, step, storyOpen, unlocked, type Command, type State } from "../../game/academy/battle";
 import { magicName } from "../../game/academy/compound";
+import { potionById } from "../../game/academy/potions";
 import { materialById } from "../../game/academy/explore";
 import { finishBattle } from "../../services/storage/repo";
 import { Bar, Panel } from "../../components/ui";
@@ -53,7 +54,7 @@ export default function BattlePage() {
         {!st.over && <p className="relative mt-2 rounded-lg bg-night-950/70 px-2 py-1 text-xs" data-testid="hint">気配:{h.text.join(" → ")}{!h.clear && <span className="text-arcane-300/60">(感受性が上がるとはっきりわかる)</span>}</p>}
       </div>
 
-      <Panel title={`ターン ${Math.min(st.turn, 10)}`}>
+      <Panel title={`ターン ${Math.min(st.turn, 10)}`} right={ctx.rested ? <span className="pill bg-gold-500/15 text-[10px] text-gold-200" data-testid="rested">庭で休んだ ・ 最大値+10%</span> : undefined}>
         <div className="grid gap-1 text-xs">
           {[["体力", st.me.hp, st.max.hp, "gold"], ["魔力", st.me.mp, st.max.mp, "arcane"], ["精神力", st.me.sp, st.max.sp, "arcane"]].map(([l, v, m, t]) => (
             <div key={l as string} className="flex items-center gap-2"><span className="w-12">{l}</span><div className="flex-1"><Bar value={v as number} max={m as number} tone={t as "gold"} /></div><span className="num w-12 text-right" data-testid={`me-${l}`}>{v}/{m}</span></div>
@@ -69,6 +70,7 @@ export default function BattlePage() {
                 </button>
               ))}
             </div>
+            {Object.entries(ctx.potions ?? {}).map(([id, v]) => <button key={id} data-testid={`potion-${id}`} className="rounded-lg border border-arcane-400/50 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.potionUsed} onClick={() => act({ type: "potion", id })}><span className="text-gold-200">魔法薬:{potionById(id)!.name}{v.fine ? "(上質)" : ""}</span> <span className="text-[10px] text-arcane-300">×{v.n} ・ {potionById(id)!.effect}{st.potionUsed ? "(この戦闘ではもう飲んだ)" : ""}</span></button>)}
             {ctx.awaken && <button data-testid="awaken" className="rounded-lg border border-gold-300 bg-gold-500/20 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.awakenUsed} onClick={() => act({ type: "awaken" })}><span className="text-gold-200">✦ 星継ぎの覚醒</span> <span className="text-[10px] text-arcane-300">{st.awaken ? `(あと${st.awaken}ターン)` : st.awakenUsed ? "(この戦闘ではもう使った)" : "3ターン、呪文の魔力半分・威力1.5倍"}</span></button>}
             {ctx.companion && <button className="rounded-lg border border-gold-400/50 bg-gold-500/10 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.companionUsed} onClick={() => act({ type: "companion" })}><span className="text-gold-200">相棒:{ctx.companion.name}</span> <span className="text-[10px] text-arcane-300">{st.companionUsed ? "(この戦闘ではもう手伝った)" : `${ctx.companion.label}${ctx.companion.mult > 1 ? ` ×${ctx.companion.mult}` : ""}`}</span></button>}
             <div className="grid grid-cols-3 gap-2">
