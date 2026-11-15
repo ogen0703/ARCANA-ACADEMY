@@ -6,6 +6,7 @@ import { roomOptions, type Step } from "../../game/academy/exploreEngine";
 import { spellById } from "../../game/academy/content";
 import { explore } from "../../services/storage/repo";
 import { MagicCircle, Panel } from "../../components/ui";
+import { ART } from "../../game/world/art";
 
 type Result = Awaited<ReturnType<typeof explore>>;
 
@@ -57,6 +58,11 @@ export default function ExploreRunPage() {
   const blocked = opt && !usable.length && !opt.alts.length && !opt.canSkip;
   return (
     <div className="mx-auto grid max-w-xl gap-4">
+      <div className="relative -mb-2 aspect-[3/1] overflow-hidden rounded-2xl border border-gold-500/20">
+        <img src={ART.place(p.id)} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover transition-[object-position] duration-700" style={{ objectPosition: `${50}% ${Math.round(85 - (i / p.rooms.length) * 60)}%` }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-night-950/80 to-transparent" />
+        <p className="absolute bottom-2 left-3 text-[11px] text-arcane-300">{p.kind}</p>
+      </div>
       <Panel title={p.name} right={<span className="num text-xs text-arcane-300">部屋 {Math.min(i + 1, p.rooms.length)} / {p.rooms.length}</span>}>
         <ol className="flex gap-1" aria-label="進み具合">{p.rooms.map((r, j) => <li key={r.id} className={`h-1.5 flex-1 rounded ${j < i ? "bg-gold-400" : j === i ? "bg-candle" : "bg-night-800"}`} />)}</ol>
         {note && <p className="mt-2 text-xs text-arcane-300">{note}</p>}
