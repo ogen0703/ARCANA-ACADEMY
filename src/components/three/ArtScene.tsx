@@ -24,7 +24,7 @@ function FloorRings({ circle }: { circle: Look["circle"] }) {
 
 const EffectsLayer = lazy(() => import("./EffectsLayer"));
 
-type Props = { time: TimeKey; season: SeasonKey; weather: WeatherKey; mode: "hall" | "portrait"; burst: number; className?: string; heroSrc?: string; orbPos?: { x: number; y: number }; look?: Look };
+type Props = { time: TimeKey; season: SeasonKey; weather: WeatherKey; mode: "hall" | "portrait"; burst: number; className?: string; heroSrc?: string; orbPos?: { x: number; y: number }; heroAspect?: number; look?: Look };
 
 /** 枠いっぱいに広間の絵を敷く(はみ出す部分は切る)。主人公や光は絵の上の位置で置くので、画面の形が変わってもずれない */
 function useStage(box: React.RefObject<HTMLDivElement>, focusY: number) {
@@ -47,7 +47,7 @@ function useStage(box: React.RefObject<HTMLDivElement>, focusY: number) {
  * 一枚絵の学院+主人公の立ち絵に、光の演出を重ねた表示。
  * 指でなぞると少しだけ奥行き(視差)が動く。主人公は呼吸するように揺れ、杖の光がまたたく。
  */
-export default function ArtScene({ time, season, weather, mode, burst, className = "", heroSrc = ART.hero, orbPos = HERO_LAYOUT.orb, look }: Props) {
+export default function ArtScene({ time, season, weather, mode, burst, className = "", heroSrc = ART.hero, orbPos = HERO_LAYOUT.orb, heroAspect = 0.405, look }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const portrait = mode === "portrait";
   const stage = useStage(box, portrait ? 0.62 : 0.6);
@@ -107,7 +107,7 @@ export default function ArtScene({ time, season, weather, mode, burst, className
       {/* 相棒(主人公の足もと) */}
       {!portrait && look?.companion && (
         <div className="art-breathe pointer-events-none absolute" data-testid="hall-companion"
-          style={{ left: Math.min(stage.left + stage.w * H.x + heroH * 0.34, (box.current?.clientWidth ?? 9999) - heroH * 0.13), top: stage.top + stage.h * H.feetY - heroH * 0.3, height: heroH * 0.3, transform: `translate3d(calc(-50% + ${par.x * 6}px), ${par.y * 3}px, 0)` }}>
+          style={{ left: Math.min(stage.left + stage.w * H.x + heroH * Math.min(heroAspect / 2 + 0.1, 0.34), (box.current?.clientWidth ?? 9999) - heroH * 0.12), top: stage.top + stage.h * H.feetY - heroH * 0.3, height: heroH * 0.3, transform: `translate3d(calc(-50% + ${par.x * 6}px), ${par.y * 3}px, 0)` }}>
           <FallbackImg srcs={ART.creature(look.companion.id, look.companion.stage)} className="h-full w-auto max-w-none select-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" />
         </div>
       )}

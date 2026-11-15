@@ -8,7 +8,7 @@ import ArtScene, { type Look } from "./ArtScene";
 import { useGame } from "../../stores/game";
 import { auraOf, circleOf, orbOf, rankOf } from "../../game/growth/appearance";
 import { stageIndex } from "../../game/academy/creatures";
-import { HERO_ORBS } from "../../game/world/art";
+import { HERO_ASPECTS, HERO_ORBS } from "../../game/world/art";
 
 // three.js は重いので、必要になったときにだけ読み込む(最初の表示を速くするため)
 const AcademyScene = lazy(() => import("./AcademyScene"));
@@ -50,7 +50,7 @@ export default function Academy3D({ mode = "hall", burst = 0, className = "" }: 
     aura: auraOf(ch), orb: orbOf(ch), circle: circleOf(ch),
     companion: ch.world.companion ? { id: ch.world.companion, stage: stageIndex(ch.world.creatures[ch.world.companion]?.affection ?? 0) } : null,
   } : undefined;
-  if (bg === "ok" && hero === "ok") return <ArtScene time={a.time} season={a.season} weather={a.weather} mode={mode} burst={burst} className={className} heroSrc={useRank ? ART.heroRank(rank) : ART.hero} orbPos={HERO_ORBS[useRank ? rank : 0]} look={look} />;
+  if (bg === "ok" && hero === "ok") return <ArtScene time={a.time} season={a.season} weather={a.weather} mode={mode} burst={burst} className={className} heroSrc={useRank ? ART.heroRank(rank) : ART.hero} orbPos={HERO_ORBS[useRank ? rank : 0]} heroAspect={HERO_ASPECTS[useRank ? rank : 0]} look={look} />;
   if (bg === "loading" || hero === "loading") return <div className={`bg-night-950 ${className}`} />;
   if (!hasWebGL()) return fb;
   return (

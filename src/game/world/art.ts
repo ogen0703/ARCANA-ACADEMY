@@ -28,6 +28,8 @@ export const HALL_ASPECT = 1.5;
 /** 主人公の立ち絵の置き方(広間の画像に対する割合)。足元の位置・背の高さ・杖の光の玉の位置(立ち絵の中の割合) */
 export const HERO_LAYOUT = { x: 0.5, feetY: 0.9, heightPct: 66, orb: { x: 0.131, y: 0.118 } };
 /** 位ごとの立ち絵の、杖の光の玉の位置(立ち絵の中の割合)。絵を入れたら合わせる */
-export const HERO_ORBS: Record<number, { x: number; y: number }> = { 0: HERO_LAYOUT.orb, 1: HERO_LAYOUT.orb, 2: HERO_LAYOUT.orb };
+export const HERO_ORBS: Record<number, { x: number; y: number }> = { 0: HERO_LAYOUT.orb, 1: { x: 0.256, y: 0.047 }, 2: { x: 0.236, y: 0.062 } };
+/** 位ごとの立ち絵の横幅÷高さ(相棒を体の横に置くため) */
+export const HERO_ASPECTS: Record<number, number> = { 0: 617 / 1522, 1: 940 / 1522, 2: 1007 / 1522 };
 /** 床の魔法陣の中心と幅(広間の画像に対する割合) */
 export const FLOOR = { x: 0.5, y: 0.775, widthPct: 56 };
