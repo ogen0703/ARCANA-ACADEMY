@@ -10,6 +10,8 @@ import { MAGIC_KEYS, MAGIC_LABELS, STAT_LABELS, type StatKey } from "../../schem
 import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { Panel } from "../../components/ui";
 import { spellById } from "../../game/academy/content";
+import { DISCOVERIES, placeById } from "../../game/academy/explore";
+import { Link } from "react-router-dom";
 
 const TABS = [
   { id: "report", label: "成長レポート" },
@@ -137,6 +139,32 @@ const Empty = ({ text }: { text: string }) => (
   </div>
 );
 
+function ExploreBook() {
+  const { character: ch, explorations } = useGame();
+  if (!ch) return null;
+  return (
+    <div className="grid gap-4" data-testid="explore-book">
+      <div>
+        <p className="label mb-1">発見(世界の断片) {ch.world.discoveries.length}/{DISCOVERIES.length}</p>
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {DISCOVERIES.map((d) => {
+            const got = ch.world.discoveries.includes(d.id);
+            return <li key={d.id} className={`rounded-xl border p-3 ${got ? "border-gold-400/40 bg-gold-500/10" : "border-arcane-500/15"}`}>{got ? <><p className="font-serif text-gold-200">{d.name}</p><p className="text-sm">{d.text}</p></> : <p className="text-sm text-arcane-300/50">？？？(まだ見つけていない)</p>}</li>;
+          })}
+        </ul>
+      </div>
+      <div>
+        <p className="label mb-1">持ち物</p>
+        {ch.inventory.length ? <ul className="flex flex-wrap gap-1.5">{ch.inventory.map((i) => <li key={i.id} className="pill bg-night-800 text-xs">{i.name} ×{i.qty}</li>)}</ul> : <p className="text-sm text-arcane-300">まだない。</p>}
+      </div>
+      <div>
+        <p className="label mb-1">探索の記録</p>
+        {explorations.length ? <ul className="space-y-1 text-sm">{explorations.slice(0, 20).map((e) => <li key={e.id} className="flex gap-2"><span className="num text-xs text-arcane-300/70">{e.date.slice(5)}</span><span>{placeById(e.place)?.name}</span><span className="text-xs text-arcane-300">{e.completed ? "最奥まで" : `${e.steps.length}部屋`}</span>{e.discoveries.length > 0 && <span className="text-xs text-gold-200">発見 {e.discoveries.length}</span>}</li>)}</ul> : <p className="text-sm text-arcane-300">まだ探索していない。<Link to="/explore" className="text-candle">探索へ</Link></p>}
+      </div>
+    </div>
+  );
+}
+
 export default function EncyclopediaPage() {
   const [tab, setTab] = useState<Tab>("report");
   return (
@@ -152,7 +180,7 @@ export default function EncyclopediaPage() {
         {tab === "timeline" && <Timeline />}
         {tab === "magic" && <MagicBook />}
         {tab === "creatures" && <Empty text="まだ出会った魔法生物はいない。魔法生物保護区がひらく Phase 5 から記録されます。" />}
-        {tab === "explore" && <Empty text="まだ探索の記録はない。古代遺跡や禁書庫の探索は Phase 4 から始まります。" />}
+        {tab === "explore" && <ExploreBook />}
       </div>
     </Panel>
   );

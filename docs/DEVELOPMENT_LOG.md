@@ -30,3 +30,10 @@
 - 実装:game/academy(content・engine)、授業の保存(1日3コマ)、講義棟・授業ページ、魔法画面の呪文一覧と条件、NEW SPELLの演出、寮
 - 確認:Vitest 34件、e2e 4本(smoke / inbox / phase3 / phase4a)。lessonLog の at に索引がなく画面が開けない不具合をe2eで発見して修正(テストにも追加)
 - 次:Phase 4b(探索+クエスト。呪文の使いどころ)→ 4c 戦闘 → 4d NPC交流
+
+## 2026-11-15 Phase 4b 探索とクエスト
+- 設定書をげんたが承認(5項目すべてOK)。承認した中身だけを実装
+- 実装:game/academy(explore・exploreEngine)、探索の保存(1日2回)、探索・探索中・クエストのページ、図鑑の探索記録、称号の表示
+- 確認:Vitest 42件、e2e 5本(phase4b:授業→呪文→探索で引き返す→杖→先生の課題→称号→記録)
+- 場所の背景画像は docs/ART_PROMPTS.md の5番(届くまでは模様の表示)
+- 次:Phase 4c 戦闘 → 4d NPC交流

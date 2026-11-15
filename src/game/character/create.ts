@@ -18,5 +18,6 @@ export function createCharacter(name: string, now: string): Character {
     appliedEventIds: [],
     diagnosedAt: null,
     academy: { proficiency: {}, units: {} },
+    world: { discoveries: [], clears: {}, quests: [], activeTitle: null },
   };
 }

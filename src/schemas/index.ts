@@ -84,6 +84,13 @@ export const CharacterSchema = z.object({
     proficiency: z.record(z.enum(MAGIC_KEYS), z.number().min(0).max(100)).default({}),
     units: z.record(z.enum(MAGIC_KEYS), z.array(z.number().int().min(0))).default({}),
   }).default({ proficiency: {}, units: {} }),
+  /** 探索とクエスト(Phase 4b):集めた発見、部屋の通り方の記録(物語で参照。性格の値には使わない)、終えたクエスト、表示する称号 */
+  world: z.object({
+    discoveries: z.array(z.string()).default([]),
+    clears: z.record(z.string(), z.array(z.string())).default({}),
+    quests: z.array(z.string()).default([]),
+    activeTitle: z.string().nullable().default(null),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -164,6 +171,20 @@ export const LessonLogSchema = z.object({
 });
 export type LessonLog = z.infer<typeof LessonLogSchema>;
 
+/* ---------- 探索の記録(Phase 4b) ---------- */
+export const ExploreLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  place: z.string(),
+  steps: z.array(z.object({ room: z.string(), method: z.string() })),
+  items: z.record(z.string(), z.number().int()),
+  discoveries: z.array(z.string()),
+  exp: z.number().int().min(0),
+  completed: z.boolean(),
+});
+export type ExploreLog = z.infer<typeof ExploreLogSchema>;
+
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
   app: z.literal("arcana-academy"),
@@ -174,6 +195,7 @@ export const ExportSchema = z.object({
   experiences: z.array(ExperienceEventSchema),
   statHistory: z.array(StatHistorySchema),
   lessonLog: z.array(LessonLogSchema).default([]),
+  exploreLog: z.array(ExploreLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 

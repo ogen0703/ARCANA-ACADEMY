@@ -32,11 +32,12 @@ export default function CharacterPage() {
             ) : (
               <p className="font-serif text-2xl text-gold-200">{ch.name} <button className="btn-ghost ml-1 rounded-lg px-2 text-xs" onClick={() => { setName(ch.name); setEditing(true); }}>名前を変える</button></p>
             )}
+            {ch.world.activeTitle && <p className="text-xs text-gold-300/90">〈{ch.world.activeTitle}〉</p>}
             <p className="num">Lv.{ch.level} ・ 経験値 {ch.experience}(次まで {prog.need - prog.inLevel})</p>
             <dl className="grid grid-cols-[5.5em_1fr] gap-y-1 text-arcane-300">
               <dt>出身</dt><dd className="text-[#e9e4f7]">{ch.history.origin}</dd>
               <dt>所属寮</dt><dd className="text-[#e9e4f7]">{ch.history.house ?? "入学時の診断で決まる"}</dd>
-              <dt>魔法の杖</dt><dd className="text-[#e9e4f7]">{ch.history.wand ?? "初期イベントで決まる"}</dd>
+              <dt>魔法の杖</dt><dd className="text-[#e9e4f7]">{ch.history.wand ?? <Link to="/quests" className="text-candle">杖えらびの儀で決まる</Link>}</dd>
               <dt>ローブ</dt><dd className="text-[#e9e4f7]">{ch.appearance.robe}</dd>
               <dt>オーラ</dt><dd className="text-[#e9e4f7]">{ch.appearance.aura}</dd>
             </dl>

@@ -10,6 +10,8 @@ export const ART = {
   areas: { academy: `${base}art/area-academy.webp`, library: `${base}art/area-library.webp` } as Record<string, string>,
   /** 先生の立ち絵(透過) */
   teacher: (k: string) => `${base}art/teacher-${k}.webp`,
+  /** 探索の場所 */
+  place: (k: string) => `${base}art/place-${k}.webp`,
 };
 /** 広間の画像の縦横比(1536×1024) */
 export const HALL_ASPECT = 1.5;

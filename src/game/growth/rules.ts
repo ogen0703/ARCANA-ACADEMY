@@ -57,6 +57,11 @@ export const P = {
   spellBasicProf: 30, // 初級:熟練度30(単元3まで)
   spellMidProf: 60, spellMidStat: 25, spellMidSignals: 5, // 中級:熟練度60(単元5まで)+能力値25+兆し5
   spellAdvProf: 100, spellAdvStat: 45, spellAdvAffinity: 60, // 上級:熟練度100+能力値45+適性60
+  // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
+  explorePerDay: 2,
+  exploreExpPerRoom: 2, exploreExpMax: 10,
+  teacherQuestProf: 10,
+  weeklyQuestExp: 20, weeklyQuestCount: 3, streakWeeks: 4,
 };
 
 /** 次のレベルまでに必要な経験値(レベルLからL+1) */

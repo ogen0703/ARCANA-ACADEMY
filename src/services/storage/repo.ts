@@ -3,6 +3,7 @@ import { CATEGORY_DEFS } from "../../game/growth/rules";
 import { createCharacter, createPlayer } from "../../game/character/create";
 import { applyGrowth } from "../../game/growth/engine";
 import { applyLesson, learnSpells } from "../../game/academy/engine";
+import { applyExploration, claimTeacherQuest, claimWeekly, makeWand, type Step } from "../../game/academy/exploreEngine";
 import type { MagicKey } from "../../schemas";
 import { todayLocal } from "../../utils/id";
 import { applyDiagnosis, diagnose } from "../../game/growth/formation";
@@ -28,6 +29,50 @@ export const listExperiences = () => db.experiences.orderBy("createdAt").reverse
 export const getExperience = (id: string) => db.experiences.get(id);
 export const listHistory = () => db.statHistory.orderBy("at").reverse().toArray();
 export const listLessons = () => db.lessonLog.orderBy("at").reverse().toArray();
+export const listExplorations = () => db.exploreLog.orderBy("at").reverse().toArray();
+
+/** 探索を1回終える(1日の上限は端末の日付で数える) */
+export async function explore(place: string, steps: Step[]) {
+  return db.transaction("rw", [db.characters, db.statHistory, db.exploreLog], async () => {
+    const date = todayLocal();
+    const todayCount = await db.exploreLog.where("date").equals(date).count();
+    const ch = await getCharacter();
+    const id = newId(), now = nowIso();
+    const r = applyExploration(ch, { id, place, steps, todayCount }, now, newId);
+    await db.characters.put(CharacterSchema.parse(r.character));
+    await db.statHistory.bulkPut(r.history);
+    await db.exploreLog.put({ id, at: now, date, place, steps, items: r.items, discoveries: r.discoveries, exp: r.exp, completed: r.completed });
+    return r;
+  });
+}
+/** 杖えらびの儀 */
+export async function makeWandNow() {
+  const ch = await getCharacter();
+  const next = makeWand(ch, nowIso());
+  await db.characters.put(CharacterSchema.parse(next));
+  return next;
+}
+/** 先生の課題を報告する */
+export async function reportTeacherQuest(qid: string) {
+  return db.transaction("rw", [db.characters, db.statHistory], async () => {
+    const r = claimTeacherQuest(await getCharacter(), qid, nowIso(), newId);
+    await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
+    return r;
+  });
+}
+/** 週替わりの課題の報酬を受け取る */
+export async function receiveWeekly(ws: string, qid: string) {
+  return db.transaction("rw", [db.characters, db.statHistory, db.experiences], async () => {
+    const r = claimWeekly(await getCharacter(), await db.experiences.toArray(), ws, qid, nowIso(), newId);
+    await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
+    return r;
+  });
+}
+/** 名前の下に出す称号 */
+export async function setActiveTitle(name: string | null) {
+  const ch = await getCharacter();
+  await db.characters.put(CharacterSchema.parse({ ...ch, world: { ...ch.world, activeTitle: name }, updatedAt: nowIso() }));
+}
 
 /** 授業を1コマ受ける(1日の上限は端末の日付で数える) */
 export async function takeLesson(course: MagicKey, unit: number, correct: boolean) {
@@ -163,7 +208,7 @@ export async function exportAll(): Promise<ExportData> {
   return ExportSchema.parse({
     app: "arcana-academy", schemaVersion: SCHEMA_VERSION, exportedAt: nowIso(),
     player: (await db.player.get("player")) ?? null, character: (await db.characters.get("hero")) ?? null,
-    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(),
+    experiences: await db.experiences.toArray(), statHistory: await db.statHistory.toArray(), lessonLog: await db.lessonLog.toArray(), exploreLog: await db.exploreLog.toArray(),
   });
 }
 
@@ -172,22 +217,23 @@ export async function importAll(raw: unknown) {
   const data = ExportSchema.parse(raw);
   if (data.schemaVersion > SCHEMA_VERSION) throw new Error("新しいバージョンのデータです。アプリを更新してから読み込んでください");
   const backup = await exportAll();
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.lessonLog, db.exploreLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.lessonLog.clear(), db.exploreLog.clear()]);
     if (data.player) await db.player.put(data.player);
     // 古い形のデータは今の形に直してから入れる
     if (data.character) await db.characters.put(data.schemaVersion < 3 ? migrateCharacterV3(data.character, data.experiences) : data.character);
     await db.experiences.bulkPut(data.experiences);
     await db.statHistory.bulkPut(data.statHistory);
     await db.lessonLog.bulkPut(data.lessonLog);
+    await db.exploreLog.bulkPut(data.exploreLog);
   });
   await ensureInitialized();
   return backup;
 }
 
 export async function deleteAllData() {
-  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog], async () => {
-    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear()]);
+  await db.transaction("rw", [db.player, db.characters, db.experiences, db.statHistory, db.meta, db.lessonLog, db.exploreLog], async () => {
+    await Promise.all([db.player.clear(), db.characters.clear(), db.experiences.clear(), db.statHistory.clear(), db.meta.clear(), db.lessonLog.clear(), db.exploreLog.clear()]);
   });
   await ensureInitialized();
 }
