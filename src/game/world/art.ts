@@ -22,6 +22,8 @@ export const ART = {
   altar: `${base}art/story-altar.webp`,
   awakened: `${base}art/hero-awakened.webp`,
   outfit: (id: string) => `${base}art/hero-${id}.webp`,
+  /** 第2章(Phase 6c):百年前の魔法使いセイル・アーデン(透過) */
+  seil: `${base}art/story-seil.webp`,
   /** 魔法生物(幼体・若体は young、成体は通常の絵) */
   creature: (id: string, stage: number) => (stage >= 2 ? [`${base}art/creature-${id}.webp`] : [`${base}art/creature-${id}-young.webp`, `${base}art/creature-${id}.webp`]),
   /** 学院の人たち(先生は授業の立ち絵) */

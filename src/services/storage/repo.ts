@@ -7,7 +7,7 @@ import { applyBattle, type Command } from "../../game/academy/battle";
 import { feed as feedCreature, play as playCreature, realBoost, setCompanion, visit as visitCreature } from "../../game/academy/creaturesEngine";
 import { gift as giftTo, receive as receiveFromNpc, talk as talkWith } from "../../game/academy/npcEngine";
 import { research as researchCompound } from "../../game/academy/compound";
-import { meetSevenstar, readScene, setOutfit, type StoryCtx } from "../../game/story/engine";
+import { meetSevenstar, readScene, readScene2, setOutfit, type StoryCtx } from "../../game/story/engine";
 import { timeOf } from "../../game/world/ambience";
 import { brew, flowerbed, walkGarden } from "../../game/academy/potions";
 import { syncProgress, type Logs } from "../../game/academy/progress";
@@ -62,11 +62,22 @@ export async function storyCtx(): Promise<StoryCtx> {
   const realDays = new Set((await db.experiences.toArray()).filter((e) => e.analysisStatus === "applied").map((e) => e.date)).size;
   const since = ch.world.story.log.find((l) => l.scene === 6)?.date;
   const nightVisits = since ? (await db.sanctuaryLog.toArray()).filter((l) => l.kind === "visit" && l.date >= since && timeOf(new Date(l.at)) === "night").length : 0;
-  return { today: todayLocal(), talkedMilo, realDays, nightVisits };
+  const towerCleared = (await db.exploreLog.where("place").equals("tower").toArray()).some((l) => l.completed);
+  const bloomsThisMonth = flowerbed(await db.experiences.toArray(), todayLocal().slice(0, 7)).length;
+  return { today: todayLocal(), talkedMilo, realDays, nightVisits, towerCleared, bloomsThisMonth };
+}
+const STORY_TABLES = () => [db.characters, db.statHistory, db.talkLog, db.experiences, db.sanctuaryLog, db.exploreLog];
+/** 第2章の場面を読む(1日1場面) */
+export async function readStory2(choice: string | null) {
+  return db.transaction("rw", STORY_TABLES(), async () => {
+    const r = readScene2(await getCharacter(), { id: newId(), choice }, await storyCtx(), nowIso(), newId);
+    await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
+    return r;
+  });
 }
 /** 物語の場面を読む(1日1場面) */
 export async function readStory(choice: string | null) {
-  return db.transaction("rw", [db.characters, db.statHistory, db.talkLog, db.experiences, db.sanctuaryLog], async () => {
+  return db.transaction("rw", STORY_TABLES(), async () => {
     const r = readScene(await getCharacter(), { id: newId(), choice }, await storyCtx(), nowIso(), newId);
     await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
     return r;
@@ -74,7 +85,7 @@ export async function readStory(choice: string | null) {
 }
 /** 場面7:七つ星の仔に近づく */
 export async function meetStar(actions: string[]) {
-  return db.transaction("rw", [db.characters, db.statHistory, db.talkLog, db.experiences, db.sanctuaryLog], async () => {
+  return db.transaction("rw", STORY_TABLES(), async () => {
     const r = meetSevenstar(await getCharacter(), { id: newId(), actions }, await storyCtx(), nowIso(), newId);
     await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
     return r;

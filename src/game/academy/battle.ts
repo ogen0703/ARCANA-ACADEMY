@@ -19,6 +19,7 @@ export const OPPONENTS: Opponent[] = [
   { id: "golem", name: "試作ゴーレム", hp: 60, atk: 9, desc: "ケスター先生の試作品。硬い殻をもち、力をためて大打撃", shell: true, pattern: ["strike", "charge", "heavy"], good: ["ancient-2", "creation-2", "astral-2"], exp: 12, reward: "starshard" },
   { id: "echo", name: "星の残響", hp: 70, atk: 10, desc: "廃神殿の祭壇の守り。3手をくり返す", pattern: ["intimidate", "charge", "heavy"], good: ["ancient-1", "astral-2"], exp: 15, reward: "staremblem", title: "星の残響を鎮めた者" },
   { id: "starshade", name: "目覚めた星影", hp: 55, atk: 8, desc: "封印からあふれた星の力。眠りを破られて怯えている(物語・道A)", pattern: ["quick", "charge", "heavy", "strike"], good: ["astral-1", "astral-2", "ancient-2"], exp: 12, reward: "stardust", story: true },
+  { id: "starhunger", name: "星喰いの影", hp: 110, atk: 13, desc: "星を飲みこむ巨大な影。第2章の山場(物語)", shell: true, pattern: ["intimidate", "charge", "heavy", "quick", "strike"], good: ["astral-2", "astral-3", "c-meteor"], exp: 20, reward: "stardust", story: true },
   { id: "teacher", name: "模擬決闘 フォルトナー先生", hp: 90, atk: 11, desc: "すべての型を使う。1〜5に勝つと挑める", shell: true, pattern: ["quick", "intimidate", "charge", "heavy", "strike"], good: [], exp: 15, reward: "starshard", title: "先生に認められた者" },
 ];
 export const opponentById = (id: string) => OPPONENTS.find((o) => o.id === id);
@@ -240,7 +241,7 @@ export function replay(c: Ctx, oppId: string, seed: number, cmds: Command[]) {
 /* ---------- 挑める相手・ランク・称号 ---------- */
 const MAIN = OPPONENTS.filter((o) => !o.story);
 /** 物語の相手(道Aの場面6を読んだあと)に挑めるか */
-export const storyOpen = (ch: Character) => ch.world.story.route === "A" && ch.world.story.scene >= 6;
+export const storyOpen = (ch: Character, oppId = "starshade") => oppId === "starhunger" ? ch.world.story2.scene >= 6 : ch.world.story.route === "A" && ch.world.story.scene >= 6;
 export const unlocked = (defeated: string[], oppId: string, story = false) => {
   if (opponentById(oppId)?.story) return story;
   const i = MAIN.findIndex((o) => o.id === oppId);
@@ -262,7 +263,7 @@ import { materialById } from "./explore";
 import type { StatHistory } from "../../schemas";
 export function applyBattle(ch: Character, input: { id: string; opp: string; seed: number; cmds: Command[]; rewardedToday: number }, now: string, newId: () => string) {
   const o = opponentById(input.opp); if (!o) throw new Error("その相手はいません");
-  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch))) throw new Error("まだ挑めない相手です");
+  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch, o.id))) throw new Error("まだ挑めない相手です");
   const s = replay(ctxOf(ch), o.id, input.seed, input.cmds);
   if (!s.over) throw new Error("戦闘が終わっていません");
   const history: StatHistory[] = []; const items: Record<string, number> = {};

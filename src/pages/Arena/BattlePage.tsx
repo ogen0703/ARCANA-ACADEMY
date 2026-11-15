@@ -23,7 +23,7 @@ export default function BattlePage() {
   const [err, setErr] = useState("");
   if (!ch || !ctx) return null;
   if (!o || !st) return <Panel title="決闘演習場"><p className="text-sm">その相手はいません。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
-  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch)) && !done) return <Panel title={o.name}><p className="text-sm">まだ挑めない相手です。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
+  if (!unlocked(ch.world.defeated, o.id, storyOpen(ch, o.id)) && !done) return <Panel title={o.name}><p className="text-sm">まだ挑めない相手です。<Link to="/arena" className="text-candle">演習場へ</Link></p></Panel>;
 
   const act = async (cmd: Command) => {
     setErr("");

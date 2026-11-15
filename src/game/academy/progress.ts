@@ -47,7 +47,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "a-wand", group: "adventure", name: "杖を手に", cond: "自分の杖をつくる", check: (ch) => flag(!!ch.history.wand) },
   { id: "a-temple", group: "adventure", name: "廃神殿の最奥", cond: "星降りの廃神殿を最奥まで", check: (_, l) => flag(l.explorations.some((e) => e.place === "temple" && e.completed)) },
   { id: "a-archive", group: "adventure", name: "禁書庫の最奥", cond: "禁書庫を最奥まで", check: (_, l) => flag(l.explorations.some((e) => e.place === "archive" && e.completed)) },
-  { id: "a-disc", group: "adventure", name: "世界の断片", cond: "発見6つ", check: (ch) => count(ch.world.discoveries.length, DISCOVERIES.length) },
+  { id: "a-disc", group: "adventure", name: "世界の断片", cond: "発見をすべて", check: (ch) => count(ch.world.discoveries.length, DISCOVERIES.length) },
   { id: "a-win", group: "adventure", name: "初勝利", cond: "演習で初めて勝つ", check: (ch) => flag(ch.world.defeated.length > 0) },
   { id: "a-silver", group: "adventure", name: "銀の徽章", cond: "演習で銀の徽章", check: (ch) => flag(["silver", "gold"].includes(arenaRank(ch.world.defeated).id)) },
   { id: "a-potion", group: "adventure", name: "魔法薬師", cond: "魔法薬8種を一度ずつ調合", check: (ch) => count(new Set(ch.world.brewLog.map((b) => b.potion)).size, POTIONS.length) },

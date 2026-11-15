@@ -23,8 +23,8 @@ export default function ArenaPage() {
       </Panel>
       <Panel title="演習の相手">
         <ul className="grid gap-2 sm:grid-cols-2">
-          {OPPONENTS.filter((o) => !o.story || storyOpen(ch) || ch.world.defeated.includes(o.id)).map((o) => {
-            const open = unlocked(ch.world.defeated, o.id, storyOpen(ch)), won = ch.world.defeated.includes(o.id);
+          {OPPONENTS.filter((o) => !o.story || storyOpen(ch, o.id) || ch.world.defeated.includes(o.id)).map((o) => {
+            const open = unlocked(ch.world.defeated, o.id, storyOpen(ch, o.id)), won = ch.world.defeated.includes(o.id);
             const body = (
               <div className="flex gap-3">
                 <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_40%,rgba(180,156,255,0.25),rgba(20,17,42,0.9)_70%)]">

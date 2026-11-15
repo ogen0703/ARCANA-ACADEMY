@@ -111,6 +111,15 @@ export const CharacterSchema = z.object({
       cleared: z.boolean().default(false),
       log: z.array(z.object({ scene: z.number().int(), date: z.string(), choice: z.string().nullable() })).default([]),
     }).default({ scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }),
+    /** 第2章(Phase 6c)。形は第1章と同じ */
+    story2: z.object({
+      scene: z.number().int().min(0).default(0),
+      choices: z.record(z.string(), z.string()).default({}),
+      route: z.enum(["A", "B", "C"]).nullable().default(null),
+      lastRead: z.string().default(""),
+      cleared: z.boolean().default(false),
+      log: z.array(z.object({ scene: z.number().int(), date: z.string(), choice: z.string().nullable() })).default([]),
+    }).default({ scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }),
     /** 着ている衣装(rank=位の装い / house=寮の正装 / starheir=星継ぎの装い) */
     outfit: z.enum(["rank", "house", "starheir"]).default("rank"),
     /** 星影の庭園(Phase 6a):最後に歩いた日・休息した日 / 魔法薬研究棟:今日の調合の回数 */
@@ -120,7 +129,7 @@ export const CharacterSchema = z.object({
     brewLog: z.array(z.object({ date: z.string(), potion: z.string() })).default([]),
     achievements: z.record(z.string(), z.string()).default({}),
     houseStars: z.array(z.string()).default([]),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank", garden: { lastWalk: "", restDate: "" }, brew: { date: "", count: 0 }, brewLog: [], achievements: {}, houseStars: [] }),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, story2: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank", garden: { lastWalk: "", restDate: "" }, brew: { date: "", count: 0 }, brewLog: [], achievements: {}, houseStars: [] }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 

@@ -26,12 +26,15 @@ export const DISCOVERIES: Discovery[] = [
   { id: "d-diary", place: "archive", name: "書きかけの日誌", text: "昔の学院生の日誌。「星が消えた夜から、誰もその名を口にしない」" },
   { id: "d-chain", place: "archive", name: "鎖の書の一節", text: "「魂は形を変えて受け継がれる。継ぐ者は、継いだことを知らない」" },
   { id: "d-codex", place: "archive", name: "魂を継ぐ者の写本", text: "名前の欄だけが空白の、古い魔法使いの記録" },
+  { id: "d-logbook", place: "tower", name: "セイルの観測日誌", text: "表紙に「セイル・アーデン」。百年前、毎晩七つ目の星を見ていた人の記録" },
+  { id: "d-starhunger", place: "tower", name: "星喰いの記録", text: "「星を食らう影は、光の強い星から順に飲みこむ」" },
+  { id: "d-orbit", place: "tower", name: "七つ目の星の軌道", text: "七つ目の星がたどるはずだった道。その先に、黒いにじみ" },
 ];
 export const discoveryById = (id: string) => DISCOVERIES.find((d) => d.id === id);
 
 /** 部屋:呪文(どれか1つ)か代わりの方法で通る。passWithout は「通れるが、部屋の発見は得られない」 */
 export type Room = { id: string; name: string; desc: string; spells: string[]; alts: string[]; passWithout?: boolean; items: string[]; discovery?: string };
-export type Place = { id: string; name: string; kind: string; desc: string; requires?: { course: MagicKey; unit: number; label: string }; rooms: Room[] };
+export type Place = { id: string; name: string; kind: string; desc: string; requires?: { course: MagicKey; unit: number; label: string }; story?: { scene: number; label: string }; rooms: Room[] };
 
 export const PLACES: Place[] = [
   {
@@ -58,6 +61,18 @@ export const PLACES: Place[] = [
       { id: "a6", name: "写本室", desc: "最奥。読めない文字の写本が並ぶ。", spells: ["ancient-1", "c-flamescript"], alts: [], items: ["oldcodex"], discovery: "d-codex" },
     ],
   },
+  {
+    id: "tower", name: "星の塔", kind: "古い観測塔", desc: "学院の裏山に百年封じられていた、セイル・アーデンの観測塔。",
+    story: { scene: 3, label: "第2章の場面3「星の塔の鍵」を読む" },
+    rooms: [
+      { id: "w1", name: "崩れた螺旋階段", desc: "段がところどころ抜け落ちている。", spells: ["creation-2"], alts: ["手すりを頼りに登る"], items: ["stardust"] },
+      { id: "w2", name: "星図の回廊", desc: "壁の星図の下に、古い日誌が置かれている。", spells: ["astral-1", "astral-2"], alts: ["窓の月明かりで読む"], items: [], discovery: "d-logbook" },
+      { id: "w3", name: "風の吹き抜け", desc: "強い風が吹き上げ、足場がない。", spells: ["elemental-2", "c-stormnet", "creation-2"], alts: [], passWithout: true, items: ["glowmoss"] },
+      { id: "w4", name: "封じられた書斎", desc: "鎖と封印の紋で閉ざされた書斎。", spells: ["ancient-2", "c-starlock", "ancient-3"], alts: [], passWithout: true, items: [], discovery: "d-starhunger" },
+      { id: "w5", name: "止まった時計の間", desc: "大きな振り子時計が、百年前の夜で止まっている。", spells: ["ancient-3", "mind-2"], alts: ["振り子をそっと止める"], items: ["oldpaper"] },
+      { id: "w6", name: "最上階の観測室", desc: "最奥。古い望遠鏡が夜空を向いている。", spells: ["astral-1", "astral-3", "c-meteor"], alts: ["古い望遠鏡をのぞく"], items: ["starshard"], discovery: "d-orbit" },
+    ],
+  }
 ];
 export const placeById = (id: string) => PLACES.find((p) => p.id === id);
 

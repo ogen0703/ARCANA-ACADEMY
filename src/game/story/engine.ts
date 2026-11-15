@@ -10,9 +10,10 @@ import { npcById } from "../academy/npc";
 import { recOf } from "../academy/creaturesEngine";
 import { proficiencyOf } from "../academy/engine";
 import { CHAPTER1, ROUTES, type Route, type StoryState } from "./chapter1";
+import { CHAPTER2, ROUTES2 } from "./chapter2";
 
 /** 物語の外から渡す事実(保存の層が数える) */
-export type StoryCtx = { today: string; talkedMilo: boolean; realDays: number; nightVisits: number };
+export type StoryCtx = { today: string; talkedMilo: boolean; realDays: number; nightVisits: number; towerCleared?: boolean; bloomsThisMonth?: number };
 export type Cond = { label: string; met: boolean; now?: string };
 
 const TEACHERS = ["t-astral", "t-mind", "t-creation", "t-nature", "t-elemental", "t-ancient"];
@@ -132,3 +133,56 @@ export function setOutfit(ch: Character, id: "rank" | "house" | "starheir", now:
   return { ...ch, world: { ...ch.world, outfit: id }, updatedAt: now };
 }
 export const routeLabel = (r: Route | null) => (r ? ROUTES[r].label : "");
+
+/* ---------- 第2章「星を降ろした人」(Phase 6c) ---------- */
+const qtyOf = (ch: Character, id: string) => ch.inventory.find((i) => i.id === id)?.qty ?? 0;
+/** 第2章の道ごとの課題(場面6がひらく条件のひとつ) */
+export function routeTask2(ch: Character, ctx: StoryCtx): Cond[] {
+  const r = ch.world.story2.route;
+  if (r === "A") return [{ label: "決闘演習場で「星の残響」に勝つ", met: ch.world.defeated.includes("echo") }];
+  if (r === "B") return [{ label: `星影の庭園で、その月の花を${P.story2Blooms}輪咲かせる`, met: (ctx.bloomsThisMonth ?? 0) >= P.story2Blooms, now: `${ctx.bloomsThisMonth ?? 0}輪` }];
+  if (r === "C") { const c = CLASSMATES.filter((id) => trustOf(ch, id) >= P.story2Trust).length; return [{ label: `学院の仲間3人の信頼${P.story2Trust}`, met: c >= 3, now: `${c}人` }]; }
+  return [];
+}
+export function nextScene2(ch: Character, ctx: StoryCtx) {
+  const s = ch.world.story2, s1 = ch.world.story;
+  if (s.cleared || s.scene >= CHAPTER2.length) return { scene: null, conds: [] as Cond[], open: false, readToday: s.lastRead === ctx.today };
+  const scene = CHAPTER2[s.scene]; const conds: Cond[] = [];
+  switch (scene.no) {
+    case 1: conds.push({ label: "第1章を読み終える", met: s1.cleared }, { label: "第1章を読み終えた次の日になる", met: s1.cleared && logDate(s1, 8) < ctx.today }); break;
+    case 2: conds.push({ label: `ミラ先生の信頼${P.story2MiraTrust}`, met: trustOf(ch, "t-mind") >= P.story2MiraTrust, now: `${trustOf(ch, "t-mind")}` }); break;
+    case 3: conds.push({ label: "素材「古い星の紋章」を持っている", met: qtyOf(ch, "staremblem") > 0 }, { label: "素材「古い写本」を持っている", met: qtyOf(ch, "oldcodex") > 0 }); break;
+    case 4: conds.push({ label: "星の塔で「セイルの観測日誌」を見つける", met: has(ch, "d-logbook") }); break;
+    case 5: conds.push({ label: "場面4の次の日になる", met: !!logDate(s, 4) && logDate(s, 4) < ctx.today }, { label: `現実の経験を承認した日が通算${P.story2RealDays5}日`, met: ctx.realDays >= P.story2RealDays5, now: `${ctx.realDays}日` }); break;
+    case 6: conds.push(...routeTask2(ch, ctx), { label: "星の塔を最奥まで登る", met: !!ctx.towerCleared }); break;
+    case 7: conds.push({ label: "決闘演習場で「星喰いの影」に勝つ", met: ch.world.defeated.includes("starhunger") }); break;
+    case 8: conds.push({ label: `現実の経験を承認した日が通算${P.story2RealDays8}日`, met: ctx.realDays >= P.story2RealDays8, now: `${ctx.realDays}日` }); break;
+  }
+  const readToday = s.lastRead === ctx.today;
+  return { scene, conds, open: conds.every((c) => c.met) && !readToday, readToday };
+}
+export function readScene2(ch: Character, input: { id: string; choice: string | null }, ctx: StoryCtx, now: string, newId: () => string) {
+  const st = nextScene2(ch, ctx);
+  if (!st.scene) throw new Error("第2章はもう読み終えた");
+  if (st.readToday) throw new Error("物語は1日1場面。また明日");
+  if (!st.open) throw new Error("この場面はまだひらいていない");
+  const sc = st.scene;
+  const pick = sc.choices ? sc.choices.find((c) => c.id === input.choice) : null;
+  if (sc.choices && !pick) throw new Error("選択肢を選んでね");
+  let c: Character = ch; const s = ch.world.story2;
+  const choices = pick ? { ...s.choices, [String(sc.no)]: pick.id } : s.choices;
+  let route = s.route;
+  if (sc.no === 2 && pick?.id === "peek") c = trustUp(c, "t-mind", now);
+  if (sc.no === 2 && pick?.id === "deep") c = { ...c, academy: { ...c.academy, proficiency: { ...c.academy.proficiency, mind: Math.min(100, Math.round((proficiencyOf(c, "mind") + P.storyProf) * 10) / 10) } } };
+  if (sc.no === 3) { // 物語の鍵を使う
+    c = { ...c, inventory: c.inventory.map((i) => (i.id === "staremblem" || i.id === "oldcodex" ? { ...i, qty: i.qty - 1 } : i)).filter((i) => i.qty > 0) };
+  }
+  if (sc.no === 4 && pick) route = pick.id as Route;
+  const cleared = sc.no === 8;
+  if (cleared && route) c = addTitle(c, ROUTES2[route].title, now);
+  if (cleared && c.world.creatures.sevenstar?.friend) { const r = c.world.creatures.sevenstar; c = { ...c, world: { ...c.world, creatures: { ...c.world.creatures, sevenstar: { ...r, affection: Math.min(100, r.affection + P.story2StarAffection) } } } }; }
+  c = { ...c, world: { ...c.world, story2: { ...s, choices, route, scene: s.scene + 1, lastRead: ctx.today, cleared, log: [...s.log, { scene: sc.no, date: ctx.today, choice: pick?.id ?? null }] } }, updatedAt: now };
+  const history: StatHistory[] = [];
+  c = addExp(c, P.storyExp, input.id, now, newId, history);
+  return { character: c, history, scene: sc, reply: pick?.reply ?? "", cleared };
+}

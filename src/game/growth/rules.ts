@@ -78,6 +78,8 @@ export const P = {
   gardenAffection: 2, gardenBloomsForTwo: 7, restMult: 1.1, // 庭を歩く
   // ---- Phase 6b 実績・学院内評価・寮内ランキング(世界設定書で承認)----
   achievementExp: 10, // 実績1つで EXP +10
+  // ---- Phase 6c 第2章「星を降ろした人」(世界設定書で承認)----
+  story2MiraTrust: 40, story2RealDays5: 20, story2RealDays8: 30, story2Blooms: 10, story2Trust: 60, story2StarAffection: 10,
   rankMin: 10, rankMax: 50, houseStarTitle: "寮の星", // 寮の仲間の週の点・初めての1位の称号
   // ---- Phase 4b 探索とクエスト(世界設定書で承認)----
   explorePerDay: 2,

@@ -5,7 +5,7 @@
 export type Route = "A" | "B" | "C";
 export type StoryState = { scene: number; choices: Record<string, string>; route: Route | null; lastRead: string; cleared: boolean; log: { scene: number; date: string; choice: string | null }[] };
 export type Choice = { id: string; label: string; reply: string };
-export type Scene = { no: number; title: string; bg: "hall-night" | "library" | "temple" | "archive" | "altar" | "sanctuary" | "arena"; lines: (s: StoryState, name: string) => string[]; choices?: Choice[] };
+export type Scene = { no: number; title: string; bg: "hall-night" | "library" | "temple" | "archive" | "altar" | "sanctuary" | "arena" | "tower"; lines: (s: StoryState, name: string) => string[]; choices?: Choice[] };
 
 const who2 = (s: StoryState) => s.choices["2"] === "together" ? "ミロ" : s.choices["2"] === "teacher" ? "セレスティン教授" : "";
 

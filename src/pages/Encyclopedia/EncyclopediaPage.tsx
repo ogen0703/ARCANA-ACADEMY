@@ -15,6 +15,7 @@ import { turningPoints } from "../../game/growth/personalityHistory";
 import { StoryLog } from "../Story/StoryPage";
 import { AchievementBook } from "../Progress/ProgressPages";
 import { CHAPTER1 } from "../../game/story/chapter1";
+import { CHAPTER2 } from "../../game/story/chapter2";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
 import { CREATURES, SEVENSTAR, sevenstarLights } from "../../game/academy/creatures";
@@ -87,7 +88,7 @@ function Report() {
 
 function Timeline() {
   const { experiences, history, character } = useGame();
-  const storyLog = character?.world.story.log ?? [];
+  const storyLog = [...(character?.world.story.log ?? []).map((l) => ({ ...l, ch: 1, scenes: CHAPTER1 })), ...(character?.world.story2.log ?? []).map((l) => ({ ...l, ch: 2, scenes: CHAPTER2 }))];
   const applied = experiences.filter((e) => e.analysisStatus === "applied").sort((a, b) => a.date.localeCompare(b.date));
   if (!applied.length && !storyLog.length) return <p className="text-sm text-arcane-300">まだ記録がありません。経験を承認すると、月ごとの年表になって残ります(消えません)。</p>;
   const levels = history.filter((h) => h.kind === "level");
@@ -114,7 +115,7 @@ function Timeline() {
               {lvs.map((h) => <span key={h!.id} className="pill num bg-arcane-500/25 text-arcane-300">Lv.{h!.before}→{h!.after}</span>)}
               {top.map(([k, v]) => <span key={k} className="pill num bg-gold-500/15 text-gold-200">{STAT_LABELS[k as StatKey].name} +{Math.round(v * 10) / 10}</span>)}
             </div>
-            {storyLog.filter((l) => l.date.startsWith(m)).map((l) => <p key={`st${l.scene}`} className="mt-1 text-xs text-arcane-300" data-testid="timeline-story">✦ 物語({l.date.slice(5).replace("-", "/")}):第{l.scene}場「{CHAPTER1[l.scene - 1].title}」{l.choice && CHAPTER1[l.scene - 1].choices ? ` ・ ${CHAPTER1[l.scene - 1].choices!.find((c) => c.id === l.choice)?.label ?? ""}` : ""}</p>)}
+            {storyLog.filter((l) => l.date.startsWith(m)).map((l) => { const sc = l.scenes[l.scene - 1]; return <p key={`st${l.ch}-${l.scene}`} className="mt-1 text-xs text-arcane-300" data-testid="timeline-story">✦ 物語({l.date.slice(5).replace("-", "/")}):第{l.ch}章 第{l.scene}場「{sc.title}」{l.choice && sc.choices ? ` ・ ${sc.choices.find((c) => c.id === l.choice)?.label ?? ""}` : ""}</p>; })}
             {turns.filter((t) => t.date.startsWith(m)).map((t) => <p key={t.date + t.key} className="mt-1 text-xs text-gold-200" data-testid="timeline-turn">✧ 心の転機({t.date.slice(5).replace("-", "/")}):この1か月で{t.label}が +{t.diff}{t.events.length ? `。きっかけ:${t.events.map((e) => e.title).join("、")}` : ""}</p>)}
             <ul className="mt-2 space-y-0.5 text-sm">
               {evs.map((e) => <li key={e.id} className="flex gap-2"><span className="num shrink-0 text-xs text-arcane-300/70">{e.date.slice(5)}</span><span className="truncate">{e.title}</span><span className="ml-auto shrink-0 text-[11px] text-arcane-300/60">{CATEGORY_DEFS[e.category].label}</span></li>)}
