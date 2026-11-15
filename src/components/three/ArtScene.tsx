@@ -6,18 +6,19 @@ import FallbackImg from "../FallbackImg";
 import type { auraOf, circleOf, orbOf } from "../../game/growth/appearance";
 
 /** 見た目の進化(Phase 5b):オーラ・杖の光・床の魔法陣・相棒 */
-export type Look = { aura: ReturnType<typeof auraOf>; orb: ReturnType<typeof orbOf>; circle: ReturnType<typeof circleOf>; companion: { id: string; stage: number } | null };
+export type Look = { aura: ReturnType<typeof auraOf>; orb: ReturnType<typeof orbOf>; circle: ReturnType<typeof circleOf>; companion: { id: string; stage: number; bound?: boolean } | null; /** 第3章のあと、七芒星の七つ目の角が灯る */ seventh?: boolean };
 const AURA_OPACITY = [0.2, 0.34, 0.5, 0.65];
 
 /** 床に寝かせた魔法陣(系統ごとの輪と、呪文の数だけ細かくなる紋様) */
-function FloorRings({ circle }: { circle: Look["circle"] }) {
-  if (!circle.rings.length) return null;
+function FloorRings({ circle, seventh }: { circle: Look["circle"]; seventh?: boolean }) {
+  if (!circle.rings.length && !seventh) return null;
   const n = circle.detail;
   return (
     <svg viewBox="-150 -50 300 100" className="art-rings pointer-events-none absolute" style={{ left: `${FLOOR.x * 100}%`, top: `${FLOOR.y * 100}%`, width: `${FLOOR.widthPct * 0.92}%` }} aria-hidden="true" data-testid="floor-rings">
       {circle.rings.map((r, i) => { const rx = 140 - i * 15, ry = rx / 3; return <ellipse key={r.k} rx={rx} ry={ry} fill="none" stroke={r.color} strokeWidth={i === 0 ? 1.6 : 1} strokeOpacity={0.85} />; })}
       {Array.from({ length: n }, (_, i) => { const t = (i / n) * Math.PI * 2, rx = 140, ry = rx / 3; return <circle key={i} cx={Math.cos(t) * rx} cy={Math.sin(t) * ry} r={1.6} fill={circle.rings[i % circle.rings.length].color} />; })}
-      {Array.from({ length: 7 }, (_, i) => { const t = (i / 7) * Math.PI * 2 - Math.PI / 2, rx = 60, ry = 20, u = ((i + 3) / 7) * Math.PI * 2 - Math.PI / 2; return <line key={i} x1={Math.cos(t) * rx} y1={Math.sin(t) * ry} x2={Math.cos(u) * rx} y2={Math.sin(u) * ry} stroke={circle.rings[0].color} strokeWidth={0.8} strokeOpacity={0.7} />; })}
+      {circle.rings.length > 0 && Array.from({ length: 7 }, (_, i) => { const t = (i / 7) * Math.PI * 2 - Math.PI / 2, rx = 60, ry = 20, u = ((i + 3) / 7) * Math.PI * 2 - Math.PI / 2; return <line key={i} x1={Math.cos(t) * rx} y1={Math.sin(t) * ry} x2={Math.cos(u) * rx} y2={Math.sin(u) * ry} stroke={circle.rings[0].color} strokeWidth={0.8} strokeOpacity={0.7} />; })}
+      {seventh && (() => { const t = (8 / 9) * Math.PI, x = Math.cos(t) * 128, y = Math.sin(t) * 42; return <g data-testid="seventh-corner"><ellipse cx={x} cy={y} rx={24} ry={10} fill="#f4d68c" opacity={0.45} className="art-seventh" /><ellipse cx={x} cy={y} rx={7} ry={3.2} fill="#fff4cf" /><path d={`M${x} ${y - 10}L${x + 1.6} ${y - 1.6}L${x + 10} ${y}L${x + 1.6} ${y + 1.6}L${x} ${y + 10}L${x - 1.6} ${y + 1.6}L${x - 10} ${y}L${x - 1.6} ${y - 1.6}z`} fill="#ffffff" /></g>; })()}
     </svg>
   );
 }
@@ -75,7 +76,7 @@ export default function ArtScene({ time, season, weather, mode, burst, className
         <img src={ART.hall[time]} alt="" draggable={false} className="absolute inset-0 h-full w-full select-none"
           style={{ filter: portrait ? "blur(2px) brightness(.6)" : undefined }} />
         {!portrait && <div className={`art-floor pointer-events-none absolute ${flash ? "art-floor-burst" : ""}`} style={{ left: `${FLOOR.x * 100}%`, top: `${FLOOR.y * 100}%`, width: `${FLOOR.widthPct}%` }} />}
-        {!portrait && look && <FloorRings circle={look.circle} />}
+        {!portrait && look && <FloorRings circle={look.circle} seventh={look.seventh} />}
       </div>
       {/* ろうそくの揺らぎ */}
       <div className="art-candle pointer-events-none absolute inset-0" style={{ opacity: time === "night" || time === "dusk" ? 1 : 0.5 }} />
@@ -108,7 +109,7 @@ export default function ArtScene({ time, season, weather, mode, burst, className
       {!portrait && look?.companion && (
         <div className="art-breathe pointer-events-none absolute" data-testid="hall-companion"
           style={{ left: Math.min(stage.left + stage.w * H.x + heroH * Math.min(heroAspect / 2 + 0.1, 0.34), (box.current?.clientWidth ?? 9999) - heroH * 0.12), top: stage.top + stage.h * H.feetY - heroH * 0.3, height: heroH * 0.3, transform: `translate3d(calc(-50% + ${par.x * 6}px), ${par.y * 3}px, 0)` }}>
-          <FallbackImg srcs={ART.creature(look.companion.id, look.companion.stage)} className="h-full w-auto max-w-none select-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" />
+          <FallbackImg srcs={ART.creature(look.companion.id, look.companion.stage, look.companion.bound)} className="h-full w-auto max-w-none select-none drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" />
         </div>
       )}
       {/* 周辺を暗く(映画のような締まり) */}

@@ -8,8 +8,8 @@ const ev = (date: string, over: Partial<ExperienceEvent> = {}) => ({ id: "e" + d
 const empty = (o: Partial<Logs> = {}): Logs => ({ experiences: [], lessons: [], explorations: [], battles: [], talks: [], sanctuary: [], research: [], ...o });
 
 describe("実績(Phase 6b)", () => {
-  it("4種類×8=32、称号は各種類の最後の1つ", () => {
-    expect(ACHIEVEMENTS).toHaveLength(32); expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(32);
+  it("32+第3章の2つ=34、称号は各種類の最後の1つ", () => {
+    expect(ACHIEVEMENTS).toHaveLength(34); expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(34);
     expect(ACHIEVEMENTS.filter((a) => a.title).map((a) => a.name)).toEqual(["一年の天球", "すべての呪文", "金の徽章", "かけがえのない人"]);
   });
   it("満たしたものを日付つきで記録、EXP+10ずつ、何度呼んでも同じ。能力値は変えない", () => {

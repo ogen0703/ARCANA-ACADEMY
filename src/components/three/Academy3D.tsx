@@ -8,6 +8,7 @@ import ArtScene, { type Look } from "./ArtScene";
 import { useGame } from "../../stores/game";
 import { auraOf, circleOf, orbOf, rankOf } from "../../game/growth/appearance";
 import { stageIndex } from "../../game/academy/creatures";
+import { seventhLit, starBound } from "../../game/story/engine";
 import { HERO_ASPECTS, HERO_ORBS, OUTFIT_LAYOUT } from "../../game/world/art";
 
 // three.js は重いので、必要になったときにだけ読み込む(最初の表示を速くするため)
@@ -52,7 +53,8 @@ export default function Academy3D({ mode = "hall", burst = 0, className = "" }: 
   const bg = useImageReady(ART.hall[a.time]), hero = useImageReady(ART.hero);
   const look: Look | undefined = ch ? {
     aura: auraOf(ch), orb: orbOf(ch), circle: circleOf(ch),
-    companion: ch.world.companion ? { id: ch.world.companion, stage: stageIndex(ch.world.creatures[ch.world.companion]?.affection ?? 0) } : null,
+    companion: ch.world.companion ? { id: ch.world.companion, stage: stageIndex(ch.world.creatures[ch.world.companion]?.affection ?? 0), bound: starBound(ch) } : null,
+    seventh: seventhLit(ch),
   } : undefined;
   if (bg === "ok" && hero === "ok") return <ArtScene time={a.time} season={a.season} weather={a.weather} mode={mode} burst={burst} className={className} heroSrc={useOutfit ? ART.outfit(outfit!) : useRank ? ART.heroRank(rank) : ART.hero} orbPos={useOutfit ? OUTFIT_LAYOUT[outfit!].orb : HERO_ORBS[useRank ? rank : 0]} heroAspect={useOutfit ? OUTFIT_LAYOUT[outfit!].aspect : HERO_ASPECTS[useRank ? rank : 0]} look={look} />;
   if (bg === "loading" || hero === "loading") return <div className={`bg-night-950 ${className}`} />;

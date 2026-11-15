@@ -51,6 +51,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "a-win", group: "adventure", name: "初勝利", cond: "演習で初めて勝つ", check: (ch) => flag(ch.world.defeated.length > 0) },
   { id: "a-silver", group: "adventure", name: "銀の徽章", cond: "演習で銀の徽章", check: (ch) => flag(["silver", "gold"].includes(arenaRank(ch.world.defeated).id)) },
   { id: "a-potion", group: "adventure", name: "魔法薬師", cond: "魔法薬8種を一度ずつ調合", check: (ch) => count(new Set(ch.world.brewLog.map((b) => b.potion)).size, POTIONS.length) },
+  { id: "a-skypath", group: "adventure", name: "夜空の回廊の踏破者", cond: "夜空の回廊を最奥まで", check: (_, l) => flag(l.explorations.some((e) => e.place === "skypath" && e.completed)) },
+  { id: "a-part1", group: "adventure", name: "第一部 完", cond: "物語 第3章を読み終える", check: (ch) => flag(ch.world.story3.cleared) },
   { id: "a-gold", group: "adventure", name: "金の徽章", cond: "演習で金の徽章(称号)", title: true, check: (ch) => flag(arenaRank(ch.world.defeated).id === "gold") },
   { id: "b-friend", group: "bond", name: "最初の仲間", cond: "魔法生物を1体仲間にする", check: (ch) => count(friends(ch).length, 1) },
   { id: "b-adult", group: "bond", name: "成体の相棒", cond: "仲間の魔法生物が成体になる", check: (ch) => flag(Object.values(ch.world.creatures).some((r) => r.friend && r.affection >= 80)) },

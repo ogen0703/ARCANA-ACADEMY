@@ -29,12 +29,15 @@ export const DISCOVERIES: Discovery[] = [
   { id: "d-logbook", place: "tower", name: "セイルの観測日誌", text: "表紙に「セイル・アーデン」。百年前、毎晩七つ目の星を見ていた人の記録" },
   { id: "d-starhunger", place: "tower", name: "星喰いの記録", text: "「星を食らう影は、光の強い星から順に飲みこむ」" },
   { id: "d-orbit", place: "tower", name: "七つ目の星の軌道", text: "七つ目の星がたどるはずだった道。その先に、黒いにじみ" },
+  { id: "d-halfstar", place: "skypath", name: "星の半身の記録", text: "欠けた星座の間の壁に刻まれた一行。「星は光と影で、ひとつ」" },
+  { id: "d-shadowmemory", place: "skypath", name: "影の記憶", text: "鏡の湖に映った百年前の夜。ひとりで光を呼びつづける影" },
+  { id: "d-starsong", place: "skypath", name: "七つ目の星の歌", text: "空の果ての門に残っていた、七つ目の星の古い歌" },
 ];
 export const discoveryById = (id: string) => DISCOVERIES.find((d) => d.id === id);
 
 /** 部屋:呪文(どれか1つ)か代わりの方法で通る。passWithout は「通れるが、部屋の発見は得られない」 */
 export type Room = { id: string; name: string; desc: string; spells: string[]; alts: string[]; passWithout?: boolean; items: string[]; discovery?: string };
-export type Place = { id: string; name: string; kind: string; desc: string; requires?: { course: MagicKey; unit: number; label: string }; story?: { scene: number; label: string }; rooms: Room[] };
+export type Place = { id: string; name: string; kind: string; desc: string; requires?: { course: MagicKey; unit: number; label: string }; story?: { chapter?: 2 | 3; scene: number; label: string }; rooms: Room[] };
 
 export const PLACES: Place[] = [
   {
@@ -71,6 +74,18 @@ export const PLACES: Place[] = [
       { id: "w4", name: "封じられた書斎", desc: "鎖と封印の紋で閉ざされた書斎。", spells: ["ancient-2", "c-starlock", "ancient-3"], alts: [], passWithout: true, items: [], discovery: "d-starhunger" },
       { id: "w5", name: "止まった時計の間", desc: "大きな振り子時計が、百年前の夜で止まっている。", spells: ["ancient-3", "mind-2"], alts: ["振り子をそっと止める"], items: ["oldpaper"] },
       { id: "w6", name: "最上階の観測室", desc: "最奥。古い望遠鏡が夜空を向いている。", spells: ["astral-1", "astral-3", "c-meteor"], alts: ["古い望遠鏡をのぞく"], items: ["starshard"], discovery: "d-orbit" },
+    ],
+  },
+  {
+    id: "skypath", name: "夜空の回廊", kind: "星の道", desc: "星の塔の最上階から空へ延びる、星でできた橋。その果てに門がある。",
+    story: { chapter: 3, scene: 3, label: "第3章の場面3「夜空の回廊」を読む" },
+    rooms: [
+      { id: "k1", name: "星の橋", desc: "手すりのない、星の光の石畳。", spells: ["astral-1", "creation-2"], alts: ["手すりのない橋をゆっくり渡る"], items: ["stardust"] },
+      { id: "k2", name: "流れ星の滝", desc: "星が光の滝になって流れ落ち、道をふさいでいる。", spells: ["elemental-2", "c-stormnet"], alts: [], passWithout: true, items: ["starshard"] },
+      { id: "k3", name: "欠けた星座の間", desc: "星がいくつも欠けた星座が、壁一面に浮かぶ。", spells: ["astral-2", "astral-3"], alts: ["星図と見くらべる"], items: [], discovery: "d-halfstar" },
+      { id: "k4", name: "影の庭", desc: "影でできた草花が、触れると逃げるように揺れる。", spells: ["mind-2", "nature-2"], alts: [], passWithout: true, items: ["glowmoss"] },
+      { id: "k5", name: "鏡の湖", desc: "夜空をそのまま映す、波ひとつない湖。", spells: ["mind-3", "ancient-3"], alts: ["湖面に自分の名前を告げる"], items: [], discovery: "d-shadowmemory" },
+      { id: "k6", name: "空の果ての門", desc: "星の光でできた大きな円い門。向こうに、影の気配。", spells: ["astral-3", "c-meteor", "c-starlock"], alts: ["仔と一緒に門に触れる"], items: ["staremblem"], discovery: "d-starsong" },
     ],
   }
 ];

@@ -11,9 +11,10 @@ import { recOf } from "../academy/creaturesEngine";
 import { proficiencyOf } from "../academy/engine";
 import { CHAPTER1, ROUTES, type Route, type StoryState } from "./chapter1";
 import { CHAPTER2, ROUTES2 } from "./chapter2";
+import { CHAPTER3, ROUTES3 } from "./chapter3";
 
 /** 物語の外から渡す事実(保存の層が数える) */
-export type StoryCtx = { today: string; talkedMilo: boolean; realDays: number; nightVisits: number; towerCleared?: boolean; bloomsThisMonth?: number };
+export type StoryCtx = { today: string; talkedMilo: boolean; realDays: number; nightVisits: number; towerCleared?: boolean; bloomsThisMonth?: number; skypathCleared?: boolean };
 export type Cond = { label: string; met: boolean; now?: string };
 
 const TEACHERS = ["t-astral", "t-mind", "t-creation", "t-nature", "t-elemental", "t-ancient"];
@@ -125,9 +126,11 @@ export function outfitsOf(ch: Character) {
     { id: "rank" as const, name: "位の装い", ok: true, how: "はじめから(位に合わせて変わる)" },
     { id: "house" as const, name: "寮の正装", ok: !!mate && trustOf(ch, mate) >= P.houseFormalTrust, how: mate ? `${npcById(mate)?.name}の信頼${P.houseFormalTrust}` : "寮が決まってから" },
     { id: "starheir" as const, name: "星継ぎの装い", ok: ch.world.story.cleared, how: "第1章を読み終える" },
+    { id: "nightsky" as const, name: "夜空の装い", ok: ch.world.story3.cleared, how: "第3章を読み終える" },
   ];
 }
-export function setOutfit(ch: Character, id: "rank" | "house" | "starheir", now: string): Character {
+export type OutfitId = "rank" | "house" | "starheir" | "nightsky";
+export function setOutfit(ch: Character, id: OutfitId, now: string): Character {
   const o = outfitsOf(ch).find((x) => x.id === id);
   if (!o?.ok) throw new Error("まだ着られない");
   return { ...ch, world: { ...ch.world, outfit: id }, updatedAt: now };
@@ -186,3 +189,64 @@ export function readScene2(ch: Character, input: { id: string; choice: string | 
   c = addExp(c, P.storyExp, input.id, now, newId, history);
   return { character: c, history, scene: sc, reply: pick?.reply ?? "", cleared };
 }
+
+/* ---------- 第3章「星を還す夜」(Phase 7) ---------- */
+/** 第3章の道ごとの課題(場面7がひらく条件のひとつ) */
+export function routeTask3(ch: Character): Cond[] {
+  const r = ch.world.story3.route;
+  if (r === "A") return [{ label: "星辰学の上級の呪文を覚える", met: ch.learnedSpells.includes("astral-3") }];
+  if (r === "B") { const a = recOf(ch, "sevenstar").affection; return [{ label: `七つ星の仔のなつき${P.story3BondAffection}`, met: a >= P.story3BondAffection, now: `${a}` }]; }
+  if (r === "C") {
+    const t = TEACHERS.filter((id) => trustOf(ch, id) >= P.story3Trust).length, c = CLASSMATES.filter((id) => trustOf(ch, id) >= P.story3Trust).length;
+    return [{ label: `先生3人の信頼${P.story3Trust}`, met: t >= 3, now: `${t}人` }, { label: `仲間3人の信頼${P.story3Trust}`, met: c >= 3, now: `${c}人` }];
+  }
+  return [];
+}
+export function nextScene3(ch: Character, ctx: StoryCtx) {
+  const s = ch.world.story3, s2 = ch.world.story2;
+  if (s.cleared || s.scene >= CHAPTER3.length) return { scene: null, conds: [] as Cond[], open: false, readToday: s.lastRead === ctx.today };
+  const scene = CHAPTER3[s.scene]; const conds: Cond[] = [];
+  switch (scene.no) {
+    case 1: conds.push({ label: "第2章を読み終える", met: s2.cleared }, { label: "第2章を読み終えた次の日になる", met: s2.cleared && logDate(s2, 8) < ctx.today }); break;
+    case 2: conds.push({ label: `セレスティン教授の信頼${P.story3StarTrust}`, met: trustOf(ch, "t-astral") >= P.story3StarTrust, now: `${trustOf(ch, "t-astral")}` }); break;
+    case 3: conds.push({ label: `現実の経験を承認した日が通算${P.story3RealDays3}日`, met: ctx.realDays >= P.story3RealDays3, now: `${ctx.realDays}日` }); break;
+    case 4: conds.push({ label: "夜空の回廊で「影の記憶」を見つける", met: has(ch, "d-shadowmemory") }); break;
+    case 5: conds.push({ label: "場面4の次の日になる", met: !!logDate(s, 4) && logDate(s, 4) < ctx.today }); break;
+    case 6: conds.push(...routeTask3(ch), { label: "夜空の回廊を最奥まで登る", met: !!ctx.skypathCleared }); break;
+    case 7: conds.push({ label: "決闘演習場で「星喰い」を鎮める", met: ch.world.defeated.includes("starshadow") }); break;
+    case 8: conds.push({ label: `現実の経験を承認した日が通算${P.story3RealDays8}日`, met: ctx.realDays >= P.story3RealDays8, now: `${ctx.realDays}日` }); break;
+  }
+  const readToday = s.lastRead === ctx.today;
+  return { scene, conds, open: conds.every((c) => c.met) && !readToday, readToday };
+}
+const starAffection = (c: Character, add: number): Character => {
+  const r = c.world.creatures.sevenstar; if (!r?.friend) return c;
+  return { ...c, world: { ...c.world, creatures: { ...c.world.creatures, sevenstar: { ...r, affection: Math.min(100, r.affection + add) } } } };
+};
+export function readScene3(ch: Character, input: { id: string; choice: string | null }, ctx: StoryCtx, now: string, newId: () => string) {
+  const st = nextScene3(ch, ctx);
+  if (!st.scene) throw new Error("第3章はもう読み終えた");
+  if (st.readToday) throw new Error("物語は1日1場面。また明日");
+  if (!st.open) throw new Error("この場面はまだひらいていない");
+  const sc = st.scene;
+  const pick = sc.choices ? sc.choices.find((c) => c.id === input.choice) : null;
+  if (sc.choices && !pick) throw new Error("選択肢を選んでね");
+  let c: Character = ch; const s = ch.world.story3;
+  const choices = pick ? { ...s.choices, [String(sc.no)]: pick.id } : s.choices;
+  let route = s.route;
+  if (sc.no === 2 && pick?.id === "know") c = { ...c, academy: { ...c.academy, proficiency: { ...c.academy.proficiency, mind: Math.min(100, Math.round((proficiencyOf(c, "mind") + P.storyProf) * 10) / 10) } } };
+  if (sc.no === 2 && pick?.id === "guard") c = starAffection(c, P.story3GuardAffection);
+  if (sc.no === 2 && pick?.id === "together") c = trustUp(c, "t-astral", now);
+  if (sc.no === 5 && pick) route = pick.id as Route;
+  const cleared = sc.no === 8;
+  if (cleared && route) c = addTitle(c, ROUTES3[route].title, now);
+  if (cleared && route !== "B") c = starAffection(c, P.story3Affection);
+  c = { ...c, world: { ...c.world, story3: { ...s, choices, route, scene: s.scene + 1, lastRead: ctx.today, cleared, log: [...s.log, { scene: sc.no, date: ctx.today, choice: pick?.id ?? null }] } }, updatedAt: now };
+  const history: StatHistory[] = [];
+  c = addExp(c, P.storyExp, input.id, now, newId, history);
+  return { character: c, history, scene: sc, reply: pick?.reply ?? "", cleared };
+}
+/** 道Bで第3章を読み終えると、七つ星の仔は光と影の結ばれた姿になる */
+export const starBound = (ch: Character) => ch.world.story3.cleared && ch.world.story3.route === "B";
+/** 大広間の七芒星の七つ目の角が灯る */
+export const seventhLit = (ch: Character) => ch.world.story3.cleared;

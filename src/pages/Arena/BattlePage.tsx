@@ -71,7 +71,7 @@ export default function BattlePage() {
               ))}
             </div>
             {Object.entries(ctx.potions ?? {}).map(([id, v]) => <button key={id} data-testid={`potion-${id}`} className="rounded-lg border border-arcane-400/50 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.potionUsed} onClick={() => act({ type: "potion", id })}><span className="text-gold-200">魔法薬:{potionById(id)!.name}{v.fine ? "(上質)" : ""}</span> <span className="text-[10px] text-arcane-300">×{v.n} ・ {potionById(id)!.effect}{st.potionUsed ? "(この戦闘ではもう飲んだ)" : ""}</span></button>)}
-            {ctx.awaken && <button data-testid="awaken" className="rounded-lg border border-gold-300 bg-gold-500/20 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.awakenUsed} onClick={() => act({ type: "awaken" })}><span className="text-gold-200">✦ 星継ぎの覚醒</span> <span className="text-[10px] text-arcane-300">{st.awaken ? `(あと${st.awaken}ターン)` : st.awakenUsed ? "(この戦闘ではもう使った)" : "3ターン、呪文の魔力半分・威力1.5倍"}</span></button>}
+            {ctx.awaken && <button data-testid="awaken" className="rounded-lg border border-gold-300 bg-gold-500/20 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.awakenUsed || !!st.awaken} onClick={() => act({ type: "awaken" })}><span className="text-gold-200">✦ 星継ぎの覚醒</span> <span className="text-[10px] text-arcane-300">{st.awaken ? `(あと${st.awaken}ターン)` : st.awakenUsed ? "(この戦闘ではもう使った)" : "3ターン、呪文の魔力半分・威力1.5倍"}</span></button>}
             {ctx.companion && <button className="rounded-lg border border-gold-400/50 bg-gold-500/10 px-2 py-1.5 text-left text-xs disabled:opacity-40" disabled={!!st.companionUsed} onClick={() => act({ type: "companion" })}><span className="text-gold-200">相棒:{ctx.companion.name}</span> <span className="text-[10px] text-arcane-300">{st.companionUsed ? "(この戦闘ではもう手伝った)" : `${ctx.companion.label}${ctx.companion.mult > 1 ? ` ×${ctx.companion.mult}` : ""}`}</span></button>}
             <div className="grid grid-cols-3 gap-2">
               <button className="btn px-2 py-1.5 text-xs" onClick={() => act({ type: "staff" })}>{ch.history.wand ? "杖で打つ" : "杖で打つ(仮の杖)"}</button>
@@ -83,7 +83,7 @@ export default function BattlePage() {
           </div>
         ) : (
           <div className="mt-3 text-center" data-testid="battle-result">
-            <p className="font-serif text-2xl text-gold-200">{({ win: "勝利!", lose: "敗北", draw: "引き分け", retreat: "退いた" } as const)[st.over]}</p>
+            <p className="font-serif text-2xl text-gold-200">{st.over === "win" && o.calm ? "鎮めた" : ({ win: "勝利!", lose: "敗北", draw: "引き分け", retreat: "退いた" } as const)[st.over]}</p>
             {done?.rewarded && <ul className="mt-2 flex flex-wrap justify-center gap-2"><li className="pill num bg-arcane-500/20 text-arcane-300">EXP +{done.exp}</li>{Object.entries(done.items).map(([k, v]) => <li key={k} className="pill bg-gold-500/15 text-gold-200">{materialById(k)?.name} ×{v}</li>)}</ul>}
             {done && st.over === "win" && !done.rewarded && <p className="text-xs text-arcane-300">今日の報酬はもう受け取った(練習試合)</p>}
             {done?.titles.map((t) => <p key={t} className="mt-1 text-sm text-gold-200">✧ 称号「{t}」</p>)}

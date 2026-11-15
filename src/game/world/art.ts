@@ -24,8 +24,10 @@ export const ART = {
   outfit: (id: string) => `${base}art/hero-${id}.webp`,
   /** 第2章(Phase 6c):百年前の魔法使いセイル・アーデン(透過) */
   seil: `${base}art/story-seil.webp`,
+  /** 第3章(Phase 7):第一部の結末の夜空 */
+  sky: `${base}art/story-sky.webp`,
   /** 魔法生物(幼体・若体は young、成体は通常の絵) */
-  creature: (id: string, stage: number) => (stage >= 2 ? [`${base}art/creature-${id}.webp`] : [`${base}art/creature-${id}-young.webp`, `${base}art/creature-${id}.webp`]),
+  creature: (id: string, stage: number, bound = false) => (bound && id === "sevenstar" ? [`${base}art/creature-sevenstar-bound.webp`, `${base}art/creature-sevenstar.webp`] : stage >= 2 ? [`${base}art/creature-${id}.webp`] : [`${base}art/creature-${id}-young.webp`, `${base}art/creature-${id}.webp`]),
   /** 学院の人たち(先生は授業の立ち絵) */
   npc: (id: string) => (id.startsWith("t-") ? `${base}art/teacher-${id.slice(2)}.webp` : `${base}art/npc-${id}.webp`),
 };
@@ -38,6 +40,6 @@ export const HERO_ORBS: Record<number, { x: number; y: number }> = { 0: HERO_LAY
 /** 位ごとの立ち絵の横幅÷高さ(相棒を体の横に置くため) */
 export const HERO_ASPECTS: Record<number, number> = { 0: 617 / 1522, 1: 940 / 1522, 2: 1007 / 1522 };
 /** 衣装の立ち絵の、杖の光の位置と横幅÷高さ。絵を入れたら合わせる */
-export const OUTFIT_LAYOUT: Record<string, { orb: { x: number; y: number }; aspect: number }> = { house: { orb: { x: 0.148, y: 0.099 }, aspect: 745 / 1522 }, starheir: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 } };
+export const OUTFIT_LAYOUT: Record<string, { orb: { x: number; y: number }; aspect: number }> = { house: { orb: { x: 0.148, y: 0.099 }, aspect: 745 / 1522 }, starheir: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 }, nightsky: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 } };
 /** 床の魔法陣の中心と幅(広間の画像に対する割合) */
 export const FLOOR = { x: 0.5, y: 0.775, widthPct: 56 };

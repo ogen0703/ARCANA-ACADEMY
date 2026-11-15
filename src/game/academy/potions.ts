@@ -19,7 +19,7 @@ export const POTIONS: Potion[] = [
   { id: "elixir", name: "星砂の霊薬", mats: ["stardust", "moonherb"], effect: "魔力+15", use: "battle", course: "creation", unit: 2, battle: { mp: 15 } },
   { id: "ward", name: "守りの香油", mats: ["oldpaper", "sunherb"], effect: "次の痛手-12", use: "battle", course: "creation", unit: 3, battle: { shield: 12 } },
   { id: "lamp", name: "灯りの香油", mats: ["candlestand", "glowmoss"], effect: "暗い部屋を通れる", use: "explore", course: "creation", unit: 1, rooms: ["t2", "a4"] },
-  { id: "float", name: "浮き足の薬", mats: ["stardust", "glowmoss"], effect: "割れた床の大穴・風の吹き抜けを渡れる", use: "explore", course: "creation", unit: 4, rooms: ["t5", "w3"] },
+  { id: "float", name: "浮き足の薬", mats: ["stardust", "glowmoss"], effect: "割れた床の大穴・風の吹き抜け・流れ星の滝を渡れる", use: "explore", course: "creation", unit: 4, rooms: ["t5", "w3", "k2"] },
   { id: "bait", name: "好物の練り餌", mats: ["stardust", "sunherb"], effect: "どの生き物にも好物と同じだけ効く", use: "sanctuary", course: "nature", unit: 1 },
   { id: "calm", name: "安らぎの香", mats: ["moonherb", "glowmoss"], effect: "その出会いの心の距離が最初から-2", use: "sanctuary", course: "nature", unit: 4 },
 ];

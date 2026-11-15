@@ -11,7 +11,7 @@ import { proficiencyOf } from "./engine";
 import { companionSupport } from "./creaturesEngine";
 
 export type FoeMove = "strike" | "quick" | "intimidate" | "charge" | "heavy";
-export type Opponent = { id: string; name: string; hp: number; atk: number; desc: string; shell?: boolean; pattern: FoeMove[]; good: string[]; exp: number; reward: string; title?: string; story?: boolean };
+export type Opponent = { id: string; name: string; hp: number; atk: number; desc: string; shell?: boolean; pattern: FoeMove[]; good: string[]; exp: number; reward: string; title?: string; story?: boolean; /** 勝ちを「鎮めた」と書く */ calm?: boolean; /** 覚醒を使える回数(既定1) */ awakenMax?: number };
 export const OPPONENTS: Opponent[] = [
   { id: "dummy", name: "藁と石の演習人形", hp: 30, atk: 5, desc: "まっすぐ殴るだけ。フォルトナー先生の練習台", pattern: ["strike"], good: [], exp: 5, reward: "stardust" },
   { id: "wisp", name: "跳ねる灯り玉", hp: 28, atk: 6, desc: "素早く、先に動く", pattern: ["quick", "quick", "strike"], good: ["nature-1"], exp: 7, reward: "glowmoss" },
@@ -20,6 +20,7 @@ export const OPPONENTS: Opponent[] = [
   { id: "echo", name: "星の残響", hp: 70, atk: 10, desc: "廃神殿の祭壇の守り。3手をくり返す", pattern: ["intimidate", "charge", "heavy"], good: ["ancient-1", "astral-2"], exp: 15, reward: "staremblem", title: "星の残響を鎮めた者" },
   { id: "starshade", name: "目覚めた星影", hp: 55, atk: 8, desc: "封印からあふれた星の力。眠りを破られて怯えている(物語・道A)", pattern: ["quick", "charge", "heavy", "strike"], good: ["astral-1", "astral-2", "ancient-2"], exp: 12, reward: "stardust", story: true },
   { id: "starhunger", name: "星喰いの影", hp: 110, atk: 13, desc: "星を飲みこむ巨大な影。第2章の山場(物語)", shell: true, pattern: ["intimidate", "charge", "heavy", "quick", "strike"], good: ["astral-2", "astral-3", "c-meteor"], exp: 20, reward: "stardust", story: true },
+  { id: "starshadow", name: "星喰い", hp: 140, atk: 15, desc: "七つ目の星の影。空の果てで、百年ずっと半身を探していた(第3章・物語)。七つ星の仔がいると覚醒を2回使える", shell: true, pattern: ["intimidate", "charge", "heavy", "quick", "strike", "quick"], good: ["astral-3", "c-meteor", "mind-3"], exp: 25, reward: "starshard", story: true, calm: true, awakenMax: 2 },
   { id: "teacher", name: "模擬決闘 フォルトナー先生", hp: 90, atk: 11, desc: "すべての型を使う。1〜5に勝つと挑める", shell: true, pattern: ["quick", "intimidate", "charge", "heavy", "strike"], good: [], exp: 15, reward: "starshard", title: "先生に認められた者" },
 ];
 export const opponentById = (id: string) => OPPONENTS.find((o) => o.id === id);
@@ -83,7 +84,7 @@ export type State = {
   /** 月の瞑想で増える、毎ターンの魔力の回復 */
   regen?: number;
   /** 星継ぎの覚醒(1戦1回、残りターン) */
-  awaken?: number; awakenUsed?: boolean;
+  awaken?: number; awakenUsed?: boolean; awakenTimes?: number;
   /** 魔法薬(1戦1回) */
   potionUsed?: boolean;
 };
@@ -160,8 +161,10 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
     }
     if (cmd.type === "awaken") {
       if (!c.awaken) throw new Error("覚醒はまだできない");
-      if (s.awakenUsed) throw new Error("覚醒は1戦に1回");
-      s.awakenUsed = true; s.awaken = P_AWAKEN.turns; say("七つ星の仔と心が重なった。――星継ぎの覚醒!(3ターン、呪文の魔力半分・威力1.5倍)");
+      const max = o.awakenMax ?? 1, used = s.awakenTimes ?? (s.awakenUsed ? 1 : 0);
+      if (used >= max) throw new Error(max > 1 ? `覚醒は1戦に${max}回` : "覚醒は1戦に1回");
+      if (s.awaken) throw new Error("いまは覚醒している");
+      s.awakenTimes = used + 1; s.awakenUsed = used + 1 >= max; s.awaken = P_AWAKEN.turns; say("七つ星の仔と心が重なった。――星継ぎの覚醒!(3ターン、呪文の魔力半分・威力1.5倍)");
       return;
     }
     if (cmd.type === "guard") { guard = true; s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.guardMp); s.me.sp = Math.min(s.max.sp, s.me.sp + BATTLE.guardSp); say("構えて、息を整えた。"); return; }
@@ -224,7 +227,7 @@ export function step(prev: State, c: Ctx, cmd: Command): State {
   if (s.reveal > 0) s.reveal--;
   if (s.awaken && cmd.type !== "awaken") s.awaken--;
   s.me.mp = Math.min(s.max.mp, s.me.mp + BATTLE.mpRegen + (s.regen ?? 0));
-  if (s.foe.hp <= 0) { s.over = "win"; say(`${o.name}に勝った!`); }
+  if (s.foe.hp <= 0) { s.over = "win"; say(o.calm ? `${o.name}を鎮めた。` : `${o.name}に勝った!`); }
   else if (s.me.hp <= 0) { s.over = "lose"; say("膝をついた。今回はここまで。"); }
   else if (s.turn >= BATTLE.maxTurns) { s.over = "draw"; say("時間切れ。引き分け。"); }
   s.turn++;
@@ -241,7 +244,7 @@ export function replay(c: Ctx, oppId: string, seed: number, cmds: Command[]) {
 /* ---------- 挑める相手・ランク・称号 ---------- */
 const MAIN = OPPONENTS.filter((o) => !o.story);
 /** 物語の相手(道Aの場面6を読んだあと)に挑めるか */
-export const storyOpen = (ch: Character, oppId = "starshade") => oppId === "starhunger" ? ch.world.story2.scene >= 6 : ch.world.story.route === "A" && ch.world.story.scene >= 6;
+export const storyOpen = (ch: Character, oppId = "starshade") => oppId === "starshadow" ? ch.world.story3.scene >= 6 : oppId === "starhunger" ? ch.world.story2.scene >= 6 : ch.world.story.route === "A" && ch.world.story.scene >= 6;
 export const unlocked = (defeated: string[], oppId: string, story = false) => {
   if (opponentById(oppId)?.story) return story;
   const i = MAIN.findIndex((o) => o.id === oppId);

@@ -7,7 +7,7 @@ import { applyBattle, type Command } from "../../game/academy/battle";
 import { feed as feedCreature, play as playCreature, realBoost, setCompanion, visit as visitCreature } from "../../game/academy/creaturesEngine";
 import { gift as giftTo, receive as receiveFromNpc, talk as talkWith } from "../../game/academy/npcEngine";
 import { research as researchCompound } from "../../game/academy/compound";
-import { meetSevenstar, readScene, readScene2, setOutfit, type StoryCtx } from "../../game/story/engine";
+import { meetSevenstar, readScene, readScene2, readScene3, setOutfit, type OutfitId, type StoryCtx } from "../../game/story/engine";
 import { timeOf } from "../../game/world/ambience";
 import { brew, flowerbed, walkGarden } from "../../game/academy/potions";
 import { syncProgress, type Logs } from "../../game/academy/progress";
@@ -63,10 +63,19 @@ export async function storyCtx(): Promise<StoryCtx> {
   const since = ch.world.story.log.find((l) => l.scene === 6)?.date;
   const nightVisits = since ? (await db.sanctuaryLog.toArray()).filter((l) => l.kind === "visit" && l.date >= since && timeOf(new Date(l.at)) === "night").length : 0;
   const towerCleared = (await db.exploreLog.where("place").equals("tower").toArray()).some((l) => l.completed);
+  const skypathCleared = (await db.exploreLog.where("place").equals("skypath").toArray()).some((l) => l.completed);
   const bloomsThisMonth = flowerbed(await db.experiences.toArray(), todayLocal().slice(0, 7)).length;
-  return { today: todayLocal(), talkedMilo, realDays, nightVisits, towerCleared, bloomsThisMonth };
+  return { today: todayLocal(), talkedMilo, realDays, nightVisits, towerCleared, bloomsThisMonth, skypathCleared };
 }
 const STORY_TABLES = () => [db.characters, db.statHistory, db.talkLog, db.experiences, db.sanctuaryLog, db.exploreLog];
+/** 第3章の場面を読む(1日1場面) */
+export async function readStory3(choice: string | null) {
+  return db.transaction("rw", STORY_TABLES(), async () => {
+    const r = readScene3(await getCharacter(), { id: newId(), choice }, await storyCtx(), nowIso(), newId);
+    await db.characters.put(CharacterSchema.parse(r.character)); await db.statHistory.bulkPut(r.history);
+    return r;
+  });
+}
 /** 第2章の場面を読む(1日1場面) */
 export async function readStory2(choice: string | null) {
   return db.transaction("rw", STORY_TABLES(), async () => {
@@ -119,7 +128,7 @@ export async function syncAchievements(logs: Logs) {
     return r;
   });
 }
-export async function chooseOutfit(id: "rank" | "house" | "starheir") {
+export async function chooseOutfit(id: OutfitId) {
   const c = setOutfit(await getCharacter(), id, nowIso());
   await db.characters.put(CharacterSchema.parse(c));
 }

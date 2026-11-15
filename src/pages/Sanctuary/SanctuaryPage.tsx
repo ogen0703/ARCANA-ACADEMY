@@ -11,6 +11,7 @@ import { todayLocal } from "../../utils/id";
 import { Bar, Panel } from "../../components/ui";
 import FallbackImg from "../../components/FallbackImg";
 import { ART } from "../../game/world/art";
+import { starBound } from "../../game/story/engine";
 
 export default function SanctuaryPage() {
   const { character: ch, sanctuary, run } = useGame();
@@ -44,7 +45,7 @@ export default function SanctuaryPage() {
                 <li key={c.id} className={`flex gap-3 rounded-xl border p-3 ${isComp ? "border-gold-400/70 bg-gold-500/10" : "border-arcane-500/25"}`} data-creature={c.id}>
                   <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_55%,rgba(244,214,140,0.2),rgba(20,17,42,0.9)_70%)]">
                     <span className="absolute inset-0 grid place-items-center font-serif text-3xl text-gold-200/30">{c.name[0]}</span>
-                    <FallbackImg srcs={ART.creature(c.id, st)} className={`absolute inset-0 h-full w-full object-contain ${st === 0 ? "scale-75" : ""}`} />
+                    <FallbackImg srcs={ART.creature(c.id, st, starBound(ch))} className={`absolute inset-0 h-full w-full object-contain ${st === 0 ? "scale-75" : ""}`} />
                   </div>
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="font-serif text-gold-200">{c.name} {isComp && <span className="pill ml-1 bg-gold-500/20 text-[10px] text-gold-200">相棒</span>}</p>

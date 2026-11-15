@@ -54,6 +54,9 @@ body {
   background: radial-gradient(circle, rgba(255,246,220,.95), rgba(180,156,255,.55) 35%, transparent 70%); }
 .art-aura { mix-blend-mode: screen; filter: blur(14px); border-radius: 50%; }
 .art-rings { transform: translate(-50%, -50%); mix-blend-mode: screen; opacity: .7; }
+.art-seventh { animation: art-seventh 3.2s ease-in-out infinite; }
+@keyframes art-seventh { 0%, 100% { opacity: .25; } 50% { opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .art-seventh { animation: none; } }
 .art-mist { background: linear-gradient(to top, rgba(200,200,230,.18), transparent); }
 @media (prefers-reduced-motion: no-preference) {
   .art-candle { animation: art-flicker 3.2s infinite; }

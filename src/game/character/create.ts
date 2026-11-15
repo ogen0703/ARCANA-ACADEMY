@@ -18,6 +18,6 @@ export function createCharacter(name: string, now: string): Character {
     appliedEventIds: [],
     diagnosedAt: null,
     academy: { proficiency: {}, units: {} },
-    world: { discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, story2: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank", garden: { lastWalk: "", restDate: "" }, brew: { date: "", count: 0 }, brewLog: [], achievements: {}, houseStars: [] },
+    world: { discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [], npcTopics: {}, answers: [], creatures: {}, companion: null, companionDaily: { date: "", gained: 0 }, research: {}, compounds: [], story: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, story2: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, story3: { scene: 0, choices: {}, route: null, lastRead: "", cleared: false, log: [] }, outfit: "rank", garden: { lastWalk: "", restDate: "" }, brew: { date: "", count: 0 }, brewLog: [], achievements: {}, houseStars: [] },
   };
 }

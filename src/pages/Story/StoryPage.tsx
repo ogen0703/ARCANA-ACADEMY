@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import { useGame } from "../../stores/game";
 import { CHAPTER1, ROUTES, type Scene, type StoryState } from "../../game/story/chapter1";
 import { CHAPTER2, ROUTES2 } from "../../game/story/chapter2";
-import { SEVENSTAR_APPROACHES, nextScene, nextScene2, type StoryCtx } from "../../game/story/engine";
-import { meetStar, readStory, readStory2, storyCtx } from "../../services/storage/repo";
+import { CHAPTER3, ROUTES3 } from "../../game/story/chapter3";
+import { SEVENSTAR_APPROACHES, nextScene, nextScene2, nextScene3, type StoryCtx } from "../../game/story/engine";
+import { meetStar, readStory, readStory2, readStory3, storyCtx } from "../../services/storage/repo";
 import { ART } from "../../game/world/art";
 import { Panel } from "../../components/ui";
 import FallbackImg from "../../components/FallbackImg";
 
-const bgOf = (b: Scene["bg"]) => b === "hall-night" ? [ART.hall.night] : b === "library" ? [ART.areas.library] : b === "temple" ? [ART.place("temple")] : b === "archive" ? [ART.place("archive")] : b === "altar" ? [ART.altar, ART.place("temple")] : b === "sanctuary" ? [ART.sanctuary] : b === "tower" ? [ART.place("tower"), ART.place("archive")] : [ART.arena];
+const bgOf = (b: Scene["bg"]) => b === "hall-night" ? [ART.hall.night] : b === "library" ? [ART.areas.library] : b === "temple" ? [ART.place("temple")] : b === "archive" ? [ART.place("archive")] : b === "altar" ? [ART.altar, ART.place("temple")] : b === "sanctuary" ? [ART.sanctuary] : b === "tower" ? [ART.place("tower"), ART.place("archive")] : b === "skypath" ? [ART.place("skypath"), ART.place("tower")] : b === "sky" ? [ART.sky, ART.hall.night] : [ART.arena];
+type Chap = 1 | 2 | 3;
+const CHAPTERS = { 1: { name: "七つ目の星", scenes: CHAPTER1 }, 2: { name: "星を降ろした人", scenes: CHAPTER2 }, 3: { name: "星を還す夜", scenes: CHAPTER3 } } as const;
 /** 第2章でセイルが姿を見せる場面 */
 const SEIL_SCENES = [1, 4, 8];
 
@@ -38,18 +41,20 @@ export default function StoryPage() {
   const [acts, setActs] = useState<string[]>([]);
   const [met, setMet] = useState<{ friend: boolean } | null>(null);
   const [err, setErr] = useState("");
-  const [chap, setChap] = useState<1 | 2 | null>(null);
+  const [chap, setChap] = useState<Chap | null>(null);
   useEffect(() => { storyCtx().then(setCtx).catch(() => setCtx(null)); }, [ch?.updatedAt]);
   if (!ch || !ctx) return null;
-  const c2open = ch.world.story.cleared, cur: 1 | 2 = chap ?? (c2open ? 2 : 1);
-  const s = cur === 2 ? ch.world.story2 : ch.world.story, nx = cur === 2 ? nextScene2(ch, ctx) : nextScene(ch, ctx);
-  const total = cur === 2 ? CHAPTER2.length : CHAPTER1.length;
-  const routeName = s.route ? (cur === 2 ? ROUTES2[s.route].label : ROUTES[s.route].label) : "";
+  const c2open = ch.world.story.cleared, c3open = ch.world.story2.cleared;
+  const opened: Chap[] = c3open ? [1, 2, 3] : c2open ? [1, 2] : [1];
+  const cur: Chap = chap ?? opened[opened.length - 1];
+  const s = cur === 3 ? ch.world.story3 : cur === 2 ? ch.world.story2 : ch.world.story, nx = cur === 3 ? nextScene3(ch, ctx) : cur === 2 ? nextScene2(ch, ctx) : nextScene(ch, ctx);
+  const total = CHAPTERS[cur].scenes.length;
+  const routeName = s.route ? (cur === 3 ? ROUTES3[s.route].label : cur === 2 ? ROUTES2[s.route].label : ROUTES[s.route].label) : "";
   const read = async (choice: string | null) => {
     setErr("");
     try {
       const sc = nx.scene!; const lines = sc.lines(s, ch.name); setChap(cur); // 読み終えて章が変わっても、読んだ章のまま
-      let r: { reply: string } | null = null; await run(async () => { r = cur === 2 ? await readStory2(choice) : await readStory(choice); });
+      let r: { reply: string } | null = null; await run(async () => { r = cur === 3 ? await readStory3(choice) : cur === 2 ? await readStory2(choice) : await readStory(choice); });
       setDone({ scene: sc, reply: r!.reply, lines });
     } catch (e) { setErr(e instanceof Error ? e.message : "うまくいきませんでした"); }
   };
@@ -66,19 +71,19 @@ export default function StoryPage() {
     <div className="mx-auto grid max-w-2xl gap-4">
       {c2open && (
         <div className="flex gap-2" data-testid="chapter-tabs">
-          {([1, 2] as const).map((n) => <button key={n} className={`pill px-3 py-1 text-sm ${cur === n ? "bg-gold-500/25 text-gold-200" : "bg-night-800/60 text-arcane-300"}`} onClick={() => { setChap(n); setDone(null); setErr(""); }}>第{n}章</button>)}
+          {opened.map((n) => <button key={n} className={`pill px-3 py-1 text-sm ${cur === n ? "bg-gold-500/25 text-gold-200" : "bg-night-800/60 text-arcane-300"}`} onClick={() => { setChap(n); setDone(null); setErr(""); }}>第{n}章</button>)}
         </div>
       )}
       <div className="panel p-4">
         <p className="font-display text-xs tracking-[0.3em] text-gold-300">CHAPTER {cur}</p>
-        <p className="font-serif text-2xl text-gold-200">{cur === 2 ? "星を降ろした人" : "七つ目の星"}</p>
+        <p className="font-serif text-2xl text-gold-200">{CHAPTERS[cur].name}</p>
         <p className="num text-xs text-arcane-300" data-testid="story-progress">{s.cleared ? "完" : `${s.scene} / ${total} 場面`}{routeName ? ` ・ 選んだ道:${routeName}` : ""}</p>
       </div>
 
       {done ? (
         <SceneView scene={done.scene} lines={done.lines} seil={cur === 2 && SEIL_SCENES.includes(done.scene.no)}>
           {done.reply && <p className="rounded-lg border border-gold-400/30 px-3 py-2 text-gold-200" data-testid="scene-reply">{done.reply}</p>}
-          <p className="font-sans text-xs text-arcane-300">{done.scene.no === 8 ? (cur === 2 ? `第2章「星を降ろした人」完。称号「${ch.world.story2.route ? ROUTES2[ch.world.story2.route].title : ""}」を手に入れた。` : "第1章「七つ目の星」完。称号と「星継ぎの装い」を手に入れた。") : "つづきは明日(物語は1日1場面)。"}</p>
+          <p className="font-sans text-xs text-arcane-300">{done.scene.no === 8 ? (cur === 3 ? `第3章「星を還す夜」完。第一部「七つ目の星」完。称号「${ch.world.story3.route ? ROUTES3[ch.world.story3.route].title : ""}」と「夜空の装い」を手に入れた。` : cur === 2 ? `第2章「星を降ろした人」完。称号「${ch.world.story2.route ? ROUTES2[ch.world.story2.route].title : ""}」を手に入れた。` : "第1章「七つ目の星」完。称号と「星継ぎの装い」を手に入れた。") : "つづきは明日(物語は1日1場面)。"}</p>
           <button className="btn" onClick={() => setDone(null)}>もどる</button>
         </SceneView>
       ) : nx.scene && nx.open ? (
@@ -111,9 +116,14 @@ export default function StoryPage() {
             </>
           )}
         </Panel>
+      ) : cur === 3 ? (
+        <Panel title="第一部「七つ目の星」完">
+          <p className="text-sm">七つ目の星の行き先を、自分で選んだ。大広間の七芒星の七つ目の角は、これからずっと灯っている。第二部は、これから。</p>
+          <p className="mt-1 text-xs text-arcane-300">キャラクター画面で「夜空の装い」に着替えられる。</p>
+        </Panel>
       ) : cur === 2 ? (
         <Panel title="第2章「星を降ろした人」完">
-          <p className="text-sm">百年前の魔法使いセイル・アーデンの名前を呼んだ。星喰いの影は、まだ遠くにいる。第3章は、これから。</p>
+          <p className="text-sm">百年前の魔法使いセイル・アーデンの名前を呼んだ。上の「第3章」から、つづきが読める。</p>
         </Panel>
       ) : (
         <Panel title="第1章「七つ目の星」完">
@@ -131,11 +141,11 @@ export default function StoryPage() {
 }
 
 /** 読んだ場面と選んだ答え(図鑑の「物語」タブでも使う。chapter を省くと全章) */
-export function StoryLog({ chapter }: { chapter?: 1 | 2 }) {
+export function StoryLog({ chapter }: { chapter?: Chap }) {
   const { character: ch } = useGame();
   const [open, setOpen] = useState<string | null>(null);
   if (!ch) return null;
-  const chs = ([[1, ch.world.story, CHAPTER1, "七つ目の星"], [2, ch.world.story2, CHAPTER2, "星を降ろした人"]] as [1 | 2, StoryState, Scene[], string][]).filter(([n, st]) => (chapter ? n === chapter : st.log.length > 0));
+  const chs = ([[1, ch.world.story, CHAPTER1, "七つ目の星"], [2, ch.world.story2, CHAPTER2, "星を降ろした人"], [3, ch.world.story3, CHAPTER3, "星を還す夜"]] as [Chap, StoryState, Scene[], string][]).filter(([n, st]) => (chapter ? n === chapter : st.log.length > 0));
   if (!chs.some(([, st]) => st.log.length)) return <p className="text-sm text-arcane-300">まだ読んだ場面はない。<Link to="/story" className="text-candle">物語へ</Link></p>;
   return (
     <div className="grid gap-3" data-testid="story-log">

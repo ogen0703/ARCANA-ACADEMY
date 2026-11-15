@@ -23,7 +23,7 @@ function addTitle(ch: Character, name: string, now: string): Character {
 
 /* ---------- 探索 ---------- */
 export function canEnter(ch: Character, place: Place) {
-  if (place.story) { const ok = ch.world.story2.scene >= place.story.scene; if (!ok) return { ok, reason: `入るには「${place.story.label}」が必要` }; }
+  if (place.story) { const ok = (place.story.chapter === 3 ? ch.world.story3 : ch.world.story2).scene >= place.story.scene; if (!ok) return { ok, reason: `入るには「${place.story.label}」が必要` }; }
   if (!place.requires) return { ok: true, reason: "" };
   const ok = unitCounts(ch, place.requires.course)[place.requires.unit] > 0;
   return { ok, reason: ok ? "" : `入るには「${place.requires.label}」が必要` };

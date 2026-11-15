@@ -16,6 +16,7 @@ import { StoryLog } from "../Story/StoryPage";
 import { AchievementBook } from "../Progress/ProgressPages";
 import { CHAPTER1 } from "../../game/story/chapter1";
 import { CHAPTER2 } from "../../game/story/chapter2";
+import { CHAPTER3 } from "../../game/story/chapter3";
 import { DISCOVERIES, placeById } from "../../game/academy/explore";
 import { NPCS, stageOf } from "../../game/academy/npc";
 import { CREATURES, SEVENSTAR, sevenstarLights } from "../../game/academy/creatures";
@@ -88,7 +89,7 @@ function Report() {
 
 function Timeline() {
   const { experiences, history, character } = useGame();
-  const storyLog = [...(character?.world.story.log ?? []).map((l) => ({ ...l, ch: 1, scenes: CHAPTER1 })), ...(character?.world.story2.log ?? []).map((l) => ({ ...l, ch: 2, scenes: CHAPTER2 }))];
+  const storyLog = [...(character?.world.story.log ?? []).map((l) => ({ ...l, ch: 1, scenes: CHAPTER1 })), ...(character?.world.story2.log ?? []).map((l) => ({ ...l, ch: 2, scenes: CHAPTER2 })), ...(character?.world.story3.log ?? []).map((l) => ({ ...l, ch: 3, scenes: CHAPTER3 }))];
   const applied = experiences.filter((e) => e.analysisStatus === "applied").sort((a, b) => a.date.localeCompare(b.date));
   if (!applied.length && !storyLog.length) return <p className="text-sm text-arcane-300">まだ記録がありません。経験を承認すると、月ごとの年表になって残ります(消えません)。</p>;
   const levels = history.filter((h) => h.kind === "level");
