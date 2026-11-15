@@ -45,6 +45,7 @@ export default function AcademyPage() {
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Link to="/lessons" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">講義棟 ・ 授業</p><p className="text-xs text-arcane-300">6つの講座で呪文を覚える(1日3コマ)</p></Link>
           <Link to="/explore" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">探索</p><p className="text-xs text-arcane-300">廃神殿と禁書庫(1日2回)</p></Link>
+          <Link to="/arena" className="rounded-xl border border-gold-400/60 bg-gold-500/10 p-3 hover:bg-gold-500/20"><p className="font-serif text-gold-200">決闘演習場</p><p className="text-xs text-arcane-300">覚えた呪文で演習の相手と戦う</p></Link>
           <Link to="/quests" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">クエスト・称号</p><p className="text-xs text-arcane-300">杖えらび・先生の課題・週替わり</p></Link>
           <Link to="/character" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">キャラクター</p><p className="text-xs text-arcane-300">能力・性格・成長の記録</p></Link>
           <Link to="/magic" className="rounded-xl border border-gold-500/30 p-3 hover:bg-gold-500/10"><p className="font-serif text-gold-200">魔法</p><p className="text-xs text-arcane-300">6つの魔法系統と適性</p></Link>

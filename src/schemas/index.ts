@@ -90,7 +90,9 @@ export const CharacterSchema = z.object({
     clears: z.record(z.string(), z.array(z.string())).default({}),
     quests: z.array(z.string()).default([]),
     activeTitle: z.string().nullable().default(null),
-  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null }),
+    /** 決闘演習場で勝ったことのある相手(Phase 4c) */
+    defeated: z.array(z.string()).default([]),
+  }).default({ discoveries: [], clears: {}, quests: [], activeTitle: null, defeated: [] }),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -185,6 +187,20 @@ export const ExploreLogSchema = z.object({
 });
 export type ExploreLog = z.infer<typeof ExploreLogSchema>;
 
+/* ---------- 戦闘の記録(Phase 4c) ---------- */
+export const BattleLogSchema = z.object({
+  id: z.string(),
+  at: iso,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  opp: z.string(),
+  result: z.enum(["win", "lose", "draw", "retreat"]),
+  turns: z.number().int().min(0),
+  rewarded: z.boolean(),
+  exp: z.number().int().min(0),
+  items: z.record(z.string(), z.number().int()),
+});
+export type BattleLog = z.infer<typeof BattleLogSchema>;
+
 /* ---------- エクスポート ---------- */
 export const ExportSchema = z.object({
   app: z.literal("arcana-academy"),
@@ -196,6 +212,7 @@ export const ExportSchema = z.object({
   statHistory: z.array(StatHistorySchema),
   lessonLog: z.array(LessonLogSchema).default([]),
   exploreLog: z.array(ExploreLogSchema).default([]),
+  battleLog: z.array(BattleLogSchema).default([]),
 });
 export type ExportData = z.infer<typeof ExportSchema>;
 

@@ -6,11 +6,13 @@ import { STAT_LABELS, type StatKey } from "../../schemas";
 import { Bar, Panel } from "../../components/ui";
 import Academy3D from "../../components/three/Academy3D";
 import { ambienceOf } from "../../game/world/ambience";
+import { rankOf } from "../../game/academy/battle";
 
 const SHORTCUTS = [
   { to: "/academy", name: "学院", desc: "8つの施設と世界" },
   { to: "/lessons", name: "授業", desc: "講座を受けて呪文を覚える" },
   { to: "/explore", name: "探索", desc: "呪文で遺跡の道をひらく" },
+  { to: "/arena", name: "演習場", desc: "呪文で演習の相手と戦う" },
   { to: "/quests", name: "クエスト", desc: "杖えらび・課題・称号" },
   { to: "/magic", name: "魔法", desc: "適性と覚えた呪文" },
   { to: "/encyclopedia", name: "図鑑", desc: "成長レポート・年表" },
@@ -32,6 +34,7 @@ export default function HomePage() {
         <div className="relative grid place-items-center px-4 pb-4 pt-3">
           <h1 className="font-serif text-3xl text-gold-200">{ch.name}</h1>
           {ch.world.activeTitle && <p className="text-xs tracking-widest text-gold-300/90" data-testid="active-title">〈{ch.world.activeTitle}〉</p>}
+          {rankOf(ch.world.defeated).id !== "novice" && <p className="text-[11px] text-arcane-300">演習ランク:{rankOf(ch.world.defeated).name}</p>}
           <p className="text-sm text-arcane-300">見習い魔法使い ・ アルカナ学院</p>
           <div className="mt-4 w-full max-w-sm">
             <div className="mb-1 flex items-baseline justify-between">

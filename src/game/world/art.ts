@@ -12,6 +12,9 @@ export const ART = {
   teacher: (k: string) => `${base}art/teacher-${k}.webp`,
   /** 探索の場所 */
   place: (k: string) => `${base}art/place-${k}.webp`,
+  /** 演習の相手 */
+  foe: (k: string) => (k === "teacher" ? `${base}art/teacher-elemental.webp` : `${base}art/foe-${k}.webp`),
+  arena: `${base}art/arena.webp`,
 };
 /** 広間の画像の縦横比(1536×1024) */
 export const HALL_ASPECT = 1.5;
