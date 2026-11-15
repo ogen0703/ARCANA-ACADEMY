@@ -40,6 +40,6 @@ export const HERO_ORBS: Record<number, { x: number; y: number }> = { 0: HERO_LAY
 /** 位ごとの立ち絵の横幅÷高さ(相棒を体の横に置くため) */
 export const HERO_ASPECTS: Record<number, number> = { 0: 617 / 1522, 1: 940 / 1522, 2: 1007 / 1522 };
 /** 衣装の立ち絵の、杖の光の位置と横幅÷高さ。絵を入れたら合わせる */
-export const OUTFIT_LAYOUT: Record<string, { orb: { x: number; y: number }; aspect: number }> = { house: { orb: { x: 0.148, y: 0.099 }, aspect: 745 / 1522 }, starheir: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 }, nightsky: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 } };
+export const OUTFIT_LAYOUT: Record<string, { orb: { x: number; y: number }; aspect: number }> = { house: { orb: { x: 0.148, y: 0.099 }, aspect: 745 / 1522 }, starheir: { orb: { x: 0.212, y: 0.081 }, aspect: 876 / 1522 }, nightsky: { orb: { x: 0.173, y: 0.127 }, aspect: 724 / 1523 } };
 /** 床の魔法陣の中心と幅(広間の画像に対する割合) */
 export const FLOOR = { x: 0.5, y: 0.775, widthPct: 56 };
